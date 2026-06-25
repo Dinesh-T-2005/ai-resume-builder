@@ -1,0 +1,2545 @@
+<div class="rb-root">
+
+  <div class="rb-topbar">
+    <div class="rb-topbar-left">
+      <mat-icon class="rb-logo-icon">description</mat-icon>
+      <span class="rb-title">Resume Editor</span>
+      <span *ngIf="jobTitle" class="rb-candidate-name">— {{ jobTitle }}</span>
+    </div>
+    <div class="rb-topbar-right">
+      <button mat-stroked-button (click)="saveResume()" [disabled]="saving" class="rb-btn-save">
+        <mat-icon>save</mat-icon> {{ saving ? 'Saving...' : 'Save' }}
+      </button>
+      <button mat-flat-button color="warn" (click)="downloadPDF()" class="rb-btn-pdf">
+        <mat-icon>picture_as_pdf</mat-icon> PDF
+      </button>
+      <button mat-flat-button color="primary" (click)="downloadDOCX()" class="rb-btn-docx">
+        <mat-icon>description</mat-icon> DOCX
+      </button>
+    </div>
+
+  </div>
+
+  <div class="rb-body">
+
+    <div class="rb-form-panel">
+
+      <div class="rb-template-grid">
+        <div class="rb-tg-label">Template</div>
+        <div class="rb-tg-items">
+          <button *ngFor="let t of templates" class="rb-tg-btn" [class.active]="selectedTemplate === t.id"
+            [style.--tc]="t.color" (click)="selectedTemplate = t.id; customAccentColor = ''">
+            <span class="rb-tg-dot" [style.background]="t.color"></span>{{ t.label }}
+          </button>
+        </div>
+      </div>
+
+      <div class="rb-section-nav">
+        <button *ngFor="let s of sections" class="rb-nav-btn" [class.active]="activeSection === s.id"
+          (click)="activeSection = s.id">
+          <mat-icon>{{ s.icon }}</mat-icon>{{ s.label }}
+        </button>
+      </div>
+
+      <div class="rb-section-content">
+
+        <ng-container *ngIf="activeSection === 'basics'">
+          <div class="rb-section-title">Personal Info</div>
+          <div class="rb-photo-area">
+            <div class="rb-photo-left">
+              <div class="rb-photo-preview" *ngIf="resume.basics.photo">
+                <img [src]="resume.basics.photo" alt="Photo">
+                <button class="rb-photo-remove" (click)="removePhoto()">✕</button>
+              </div>
+              <div class="rb-photo-placeholder" *ngIf="!resume.basics.photo" (click)="photoInput.click()">
+                <mat-icon>add_a_photo</mat-icon>
+                <span>Add Photo</span>
+              </div>
+              <input #photoInput type="file" accept="image/*" (change)="onPhotoUpload($event)" style="display:none">
+            </div>
+            <div class="rb-photo-right">
+              <div class="rb-photo-title">Profile Photo</div>
+              <div class="rb-photo-hint">JPG / PNG · Max 2MB</div>
+              <button *ngIf="resume.basics.photo" class="rb-photo-change-btn" (click)="photoInput.click()">
+                <mat-icon>edit</mat-icon> Change
+              </button>
+            </div>
+          </div>
+          <div class="rb-fields">
+            <mat-form-field class="rb-field-full" appearance="outline">
+              <mat-label>Full Name</mat-label>
+              <input matInput [(ngModel)]="resume.basics.name">
+            </mat-form-field>
+            <mat-form-field class="rb-field-full" appearance="outline">
+              <mat-label>Headline / Job Title</mat-label>
+              <input matInput [(ngModel)]="resume.basics.headline">
+            </mat-form-field>
+            <div class="rb-field-row">
+              <mat-form-field class="rb-field" appearance="outline">
+                <mat-label>Email</mat-label>
+                <input matInput [(ngModel)]="resume.basics.email">
+              </mat-form-field>
+              <mat-form-field class="rb-field" appearance="outline">
+                <mat-label>Phone</mat-label>
+                <input matInput [(ngModel)]="resume.basics.phone">
+              </mat-form-field>
+            </div>
+            <mat-form-field class="rb-field-full" appearance="outline">
+              <mat-label>Location</mat-label>
+              <input matInput [(ngModel)]="resume.basics.location">
+            </mat-form-field>
+            <mat-form-field class="rb-field-full" appearance="outline">
+              <mat-label>LinkedIn</mat-label>
+              <input matInput [(ngModel)]="resume.basics.linkedin">
+            </mat-form-field>
+            <mat-form-field class="rb-field-full" appearance="outline">
+              <mat-label>Website</mat-label>
+              <input matInput [(ngModel)]="resume.basics.website">
+            </mat-form-field>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="activeSection === 'summary'">
+          <div class="rb-section-title">Summary</div>
+          <mat-form-field class="rb-field-full" appearance="outline">
+            <mat-label>Professional Summary</mat-label>
+            <textarea matInput [(ngModel)]="resume.summary" rows="8"></textarea>
+          </mat-form-field>
+        </ng-container>
+
+        <ng-container *ngIf="activeSection === 'experience'">
+          <div class="rb-section-header">
+            <div class="rb-section-title" style="margin:0">Experience</div>
+            <button mat-mini-fab color="primary" (click)="addExperience()"><mat-icon>add</mat-icon></button>
+          </div>
+          <div *ngIf="resume.experience.length === 0" class="rb-empty">
+            <mat-icon>work_outline</mat-icon>
+            <p>No experience added yet</p>
+          </div>
+          <div *ngFor="let exp of resume.experience; let i = index" class="rb-card">
+            <div class="rb-card-header">
+              <span>{{ exp.position || 'New Position' }}</span>
+              <button mat-icon-button color="warn" (click)="removeExperience(i)"><mat-icon>delete</mat-icon></button>
+            </div>
+            <div class="rb-fields">
+              <div class="rb-field-row">
+                <mat-form-field class="rb-field" appearance="outline">
+                  <mat-label>Position</mat-label><input matInput [(ngModel)]="exp.position">
+                </mat-form-field>
+                <mat-form-field class="rb-field" appearance="outline">
+                  <mat-label>Company</mat-label><input matInput [(ngModel)]="exp.company">
+                </mat-form-field>
+              </div>
+              <div class="rb-field-row">
+                <mat-form-field class="rb-field" appearance="outline">
+                  <mat-label>Start Date</mat-label><input matInput [(ngModel)]="exp.startDate" placeholder="Jan 2020">
+                </mat-form-field>
+                <mat-form-field class="rb-field" appearance="outline">
+                  <mat-label>End Date</mat-label><input matInput [(ngModel)]="exp.endDate" [disabled]="exp.current"
+                    placeholder="Dec 2023">
+                </mat-form-field>
+              </div>
+              <label class="rb-checkbox rb-checkbox-row">
+                <input type="checkbox" [(ngModel)]="exp.current"> Currently working here
+              </label>
+              <mat-form-field class="rb-field-full" appearance="outline">
+                <mat-label>Description</mat-label>
+                <textarea matInput [(ngModel)]="exp.description" rows="4"></textarea>
+              </mat-form-field>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="activeSection === 'education'">
+          <div class="rb-section-header">
+            <div class="rb-section-title" style="margin:0">Education</div>
+            <button mat-mini-fab color="primary" (click)="addEducation()"><mat-icon>add</mat-icon></button>
+          </div>
+          <div *ngIf="resume.education.length === 0" class="rb-empty">
+            <mat-icon>school</mat-icon>
+            <p>No education added yet</p>
+          </div>
+          <div *ngFor="let edu of resume.education; let i = index" class="rb-card">
+            <div class="rb-card-header">
+              <span>{{ edu.institution || 'New Institution' }}</span>
+              <button mat-icon-button color="warn" (click)="removeEducation(i)"><mat-icon>delete</mat-icon></button>
+            </div>
+            <div class="rb-fields">
+              <mat-form-field class="rb-field-full" appearance="outline">
+                <mat-label>Institution</mat-label><input matInput [(ngModel)]="edu.institution">
+              </mat-form-field>
+              <div class="rb-field-row">
+                <mat-form-field class="rb-field" appearance="outline">
+                  <mat-label>Degree</mat-label><input matInput [(ngModel)]="edu.degree">
+                </mat-form-field>
+                <mat-form-field class="rb-field" appearance="outline">
+                  <mat-label>Field</mat-label><input matInput [(ngModel)]="edu.field">
+                </mat-form-field>
+              </div>
+              <div class="rb-field-row">
+                <mat-form-field class="rb-field" appearance="outline">
+                  <mat-label>Start</mat-label><input matInput [(ngModel)]="edu.startDate">
+                </mat-form-field>
+                <mat-form-field class="rb-field" appearance="outline">
+                  <mat-label>End</mat-label><input matInput [(ngModel)]="edu.endDate">
+                </mat-form-field>
+                <mat-form-field class="rb-field" appearance="outline">
+                  <mat-label>GPA</mat-label><input matInput [(ngModel)]="edu.gpa">
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="activeSection === 'skills'">
+          <div class="rb-section-title">Skills</div>
+          <div class="rb-tag-input-row">
+            <mat-form-field class="rb-field-flex" appearance="outline">
+              <mat-label>Add Skill</mat-label>
+              <input matInput [(ngModel)]="skillInput" (keyup.enter)="addSkill()" placeholder="e.g. JavaScript">
+            </mat-form-field>
+            <button mat-mini-fab color="primary" (click)="addSkill()"><mat-icon>add</mat-icon></button>
+          </div>
+          <div class="rb-tags">
+            <span *ngFor="let s of resume.skills; let i = index" class="rb-tag">
+              {{ s }}<mat-icon (click)="removeSkill(i)">close</mat-icon>
+            </span>
+          </div>
+          <div *ngIf="resume.skills.length === 0" class="rb-empty">
+            <mat-icon>psychology</mat-icon>
+            <p>No skills added yet</p>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="activeSection === 'strengths'">
+          <div class="rb-section-title">Strengths</div>
+          <div class="rb-strength-add">
+            <mat-form-field class="rb-field-flex" appearance="outline">
+              <mat-label>Strength</mat-label>
+              <input matInput [(ngModel)]="strengthInput" (keyup.enter)="addStrength()"
+                placeholder="e.g. Problem Solving">
+            </mat-form-field>
+            <div class="rb-level-box">
+              <div class="rb-level-label">Level</div>
+              <div class="rb-level-stars">
+                <mat-icon *ngFor="let star of starRange()" [class.star-filled]="star <= strengthLevel" class="rb-star"
+                  (click)="strengthLevel = star">{{ star <= strengthLevel ? 'star' : 'star_border' }}</mat-icon>
+              </div>
+              <span class="rb-level-text">{{ strengthLevelLabel(strengthLevel) }}</span>
+            </div>
+            <button mat-mini-fab color="primary" (click)="addStrength()"><mat-icon>add</mat-icon></button>
+          </div>
+          <div class="rb-strength-list">
+            <div *ngFor="let s of resume.strengths; let i = index" class="rb-strength-item">
+              <div class="rb-strength-info">
+                <span class="rb-strength-name">{{ s.name }}</span>
+                <div class="rb-strength-row">
+                  <mat-icon *ngFor="let star of starRange()" [class.star-filled]="star <= s.level" class="rb-star-sm">
+                    {{ star <= s.level ? 'star' : 'star_border' }}</mat-icon>
+                      <span class="rb-level-badge">{{ strengthLevelLabel(s.level) }}</span>
+                </div>
+              </div>
+              <button mat-icon-button color="warn" (click)="removeStrength(i)"><mat-icon>delete</mat-icon></button>
+            </div>
+            <div *ngIf="!resume.strengths?.length" class="rb-empty">
+              <mat-icon>star_border</mat-icon>
+              <p>No strengths added yet</p>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="activeSection === 'languages'">
+          <div class="rb-section-title">Languages</div>
+          <div class="rb-tag-input-row">
+            <mat-form-field class="rb-field-flex" appearance="outline">
+              <mat-label>Add Language</mat-label>
+              <input matInput [(ngModel)]="languageInput" (keyup.enter)="addLanguage()">
+            </mat-form-field>
+            <button mat-mini-fab color="primary" (click)="addLanguage()"><mat-icon>add</mat-icon></button>
+          </div>
+          <div class="rb-tags">
+            <span *ngFor="let l of resume.languages; let i = index" class="rb-tag">
+              {{ l }}<mat-icon (click)="removeLanguage(i)">close</mat-icon>
+            </span>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="activeSection === 'certifications'">
+          <div class="rb-section-title">Certifications</div>
+          <div class="rb-tag-input-row">
+            <mat-form-field class="rb-field-flex" appearance="outline">
+              <mat-label>Add Certification</mat-label>
+              <input matInput [(ngModel)]="certInput" (keyup.enter)="addCert()">
+            </mat-form-field>
+            <button mat-mini-fab color="primary" (click)="addCert()"><mat-icon>add</mat-icon></button>
+          </div>
+          <div class="rb-tags">
+            <span *ngFor="let c of resume.certifications; let i = index" class="rb-tag">
+              {{ c }}<mat-icon (click)="removeCert(i)">close</mat-icon>
+            </span>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="activeSection === 'attachments'">
+          <div class="rb-section-title">Files &amp; Attachments</div>
+          <p class="rb-hint-text">Certificates, portfolio, cover letter attachments</p>
+          <div class="rb-attach-upload" (click)="attachInput.click()">
+            <mat-icon>cloud_upload</mat-icon>
+            <div>
+              <strong>Click to upload files</strong>
+              <span>PDF, DOCX, JPG, PNG · Max 5MB each</span>
+            </div>
+          </div>
+          <input #attachInput type="file" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            (change)="onFileAttach($event)" style="display:none">
+          <div class="rb-attach-list" *ngIf="resume.attachments?.length">
+            <div *ngFor="let att of resume.attachments; let i = index" class="rb-attach-item">
+              <div class="rb-attach-icon" [class]="'att-' + att.type">
+                <mat-icon>{{ att.type === 'certificate' ? 'workspace_premium' : att.type === 'portfolio' ? 'image' :
+                  'insert_drive_file' }}</mat-icon>
+              </div>
+              <div class="rb-attach-info">
+                <div class="rb-attach-name">{{ att.name }}</div>
+                <div class="rb-attach-meta">
+                  <span class="rb-attach-type">{{ att.type }}</span>
+                  <span>{{ att.size }}</span>
+                </div>
+              </div>
+              <div class="rb-attach-actions">
+                <button mat-icon-button (click)="downloadAttachment(att)"
+                  matTooltip="Download"><mat-icon>download</mat-icon></button>
+                <button mat-icon-button color="warn" (click)="removeAttachment(i)"><mat-icon>delete</mat-icon></button>
+              </div>
+            </div>
+          </div>
+          <div class="rb-empty" *ngIf="!resume.attachments?.length">
+            <mat-icon>attach_file</mat-icon>
+            <p>No files attached yet</p>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="activeSection === 'design'">
+          <div class="rb-section-title">Design &amp; Template</div>
+          <div class="rb-design-label">Choose Template</div>
+          <div class="rb-design-grid">
+            <div *ngFor="let t of templates" class="rb-design-card" [class.active]="selectedTemplate === t.id"
+              [style.--tc]="t.color" (click)="selectedTemplate = t.id; customAccentColor = ''">
+              <div class="rb-design-preview" [style.background]="t.color">
+                <div class="rb-dp-line w70"></div>
+                <div class="rb-dp-line w50"></div>
+                <div class="rb-dp-line w80"></div>
+                <div class="rb-dp-line w60"></div>
+              </div>
+              <div class="rb-design-name">{{ t.label }}</div>
+              <mat-icon *ngIf="selectedTemplate === t.id" class="rb-design-check">check_circle</mat-icon>
+            </div>
+          </div>
+          <div class="rb-design-label" style="margin-top:20px">Accent Color</div>
+          <div class="rb-color-row">
+            <div class="rb-color-preview" [style.background]="accentColor"></div>
+            <input type="color" [(ngModel)]="customAccentColor" class="rb-color-input" [value]="accentColor">
+            <span class="rb-color-value">{{ accentColor }}</span>
+            <button *ngIf="customAccentColor" mat-stroked-button (click)="resetColor()"
+              style="font-size:11px;height:32px;line-height:32px;">
+              <mat-icon style="font-size:14px;">refresh</mat-icon> Reset
+            </button>
+          </div>
+          <div class="rb-color-presets">
+            <div *ngFor="let p of colorPresets" class="rb-preset-dot" [style.background]="p"
+              [class.active]="accentColor === p" (click)="customAccentColor = p" [matTooltip]="p"></div>
+          </div>
+        </ng-container>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         PREVIEW PANEL
+    ══════════════════════════════════════════════════════════ -->
+    <div class="rb-preview-panel">
+      <div class="rb-preview-label">LIVE PREVIEW · {{ previewPageCount }} PAGE{{ previewPageCount > 1 ? 'S' : '' }}
+      </div>
+
+      <!-- ── Shared extras template ── -->
+      <ng-template #commonExtras>
+        <div *ngIf="resume.attachments?.length" style="padding:10px 28px 12px;">
+          <div
+            style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;border-bottom:2px solid currentColor;padding-bottom:3px;"
+            [style.color]="accentColor">Attachments</div>
+          <div *ngFor="let att of resume.attachments"
+            style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+            <span style="font-size:9px;color:#1e40af;cursor:pointer;text-decoration:underline;font-weight:500;"
+              (click)="downloadAttachment(att)">{{ att.name }}</span>
+            <span style="font-size:8px;color:#94a3b8;">({{ att.size }})</span>
+            <span
+              style="font-size:8px;background:#eff6ff;color:#2563eb;padding:1px 6px;border-radius:8px;text-transform:capitalize;">{{
+              att.type }}</span>
+          </div>
+        </div>
+      </ng-template>
+
+      <!-- ── Shared resume content templates ── -->
+
+      <ng-template #classicContent>
+        <div class="rc-header" [style.background]="accentColor">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <img *ngIf="resume.basics.photo" [src]="resume.basics.photo" class="rc-photo" alt="photo">
+            <div>
+              <h1 class="rc-name">{{ resume.basics.name || 'Your Name' }}</h1>
+              <p class="rc-headline">{{ resume.basics.headline }}</p>
+            </div>
+          </div>
+          <div class="rc-contact">
+            <span *ngIf="resume.basics.email"><mat-icon>email</mat-icon>{{ resume.basics.email }}</span>
+            <span *ngIf="resume.basics.phone"><mat-icon>phone</mat-icon>{{ resume.basics.phone }}</span>
+            <span *ngIf="resume.basics.location"><mat-icon>location_on</mat-icon>{{ resume.basics.location }}</span>
+            <span *ngIf="resume.basics.linkedin"><mat-icon>link</mat-icon>{{ resume.basics.linkedin }}</span>
+          </div>
+        </div>
+        <div class="rc-body">
+          <div *ngIf="resume.summary" class="rc-section">
+            <div class="rc-section-title" [style.color]="accentColor">Summary</div>
+            <p class="rc-text">{{ resume.summary }}</p>
+          </div>
+          <div *ngIf="resume.experience.length > 0" class="rc-section">
+            <div class="rc-section-title" [style.color]="accentColor">Experience</div>
+            <div *ngFor="let exp of resume.experience" class="rc-item">
+              <div class="rc-item-header"><strong>{{ exp.position }}</strong><span class="rc-date">{{ exp.startDate }} –
+                  {{ exp.current ? 'Present' : exp.endDate }}</span></div>
+              <div class="rc-company">{{ exp.company }}</div>
+              <p class="rc-desc" [innerHTML]="safeDesc(exp.description)"></p>
+            </div>
+          </div>
+          <div *ngIf="resume.education.length > 0" class="rc-section">
+            <div class="rc-section-title" [style.color]="accentColor">Education</div>
+            <div *ngFor="let edu of resume.education" class="rc-item">
+              <div class="rc-item-header"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span class="rc-date">{{
+                  edu.startDate }} – {{ edu.endDate }}</span></div>
+              <div class="rc-company">{{ edu.institution }}<span *ngIf="edu.gpa"> | GPA: {{ edu.gpa }}</span></div>
+            </div>
+          </div>
+          <div class="rc-two-col">
+            <div *ngIf="resume.skills.length > 0" class="rc-half">
+              <div class="rc-section-title" [style.color]="accentColor">Skills</div>
+              <div class="rc-tags-preview">
+                <span *ngFor="let s of resume.skills" class="rc-tag-item" [style.color]="accentColor"
+                  [style.border-color]="accentColor">{{ s }}</span>
+              </div>
+            </div>
+            <div *ngIf="(resume.strengths?.length ?? 0) > 0" class="rc-half">
+              <div class="rc-section-title" [style.color]="accentColor">Strengths</div>
+              <div *ngFor="let s of resume.strengths" class="rc-strength-row">
+                <span style="font-size:9px;color:#374151;flex:1;">{{ s.name }}</span>
+                <span *ngFor="let star of starRange()" style="font-size:10px;"
+                  [style.color]="star <= s.level ? accentColor : '#d1d5db'">★</span>
+              </div>
+            </div>
+          </div>
+          <div class="rc-two-col">
+            <div *ngIf="resume.languages.length > 0" class="rc-half">
+              <div class="rc-section-title" [style.color]="accentColor">Languages</div>
+              <ul class="rc-list">
+                <li *ngFor="let l of resume.languages">{{ l }}</li>
+              </ul>
+            </div>
+            <div *ngIf="resume.certifications.length > 0" class="rc-half">
+              <div class="rc-section-title" [style.color]="accentColor">Certifications</div>
+              <ul class="rc-list">
+                <li *ngFor="let c of resume.certifications">{{ c }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+
+      <!-- ════ 1. CLASSIC ════ -->
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'classic'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-classic">
+              <ng-container *ngTemplateOutlet="classicContent"></ng-container>
+            </div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-classic">
+            <ng-container *ngTemplateOutlet="classicContent"></ng-container>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ 2. MODERN ════ -->
+      <ng-template #modernContent>
+        <div class="rm-sidebar" [style.background]="accentColor">
+          <img *ngIf="resume.basics.photo" [src]="resume.basics.photo" class="rm-photo" alt="photo">
+          <div *ngIf="!resume.basics.photo" class="rm-avatar">{{ (resume.basics.name || 'A')[0].toUpperCase() }}</div>
+          <div class="rm-name">{{ resume.basics.name || 'Your Name' }}</div>
+          <div class="rm-headline">{{ resume.basics.headline }}</div>
+          <div class="rm-divider"></div>
+          <div *ngIf="resume.basics.email" class="rm-ci"><mat-icon>email</mat-icon><span>{{ resume.basics.email
+              }}</span></div>
+          <div *ngIf="resume.basics.phone" class="rm-ci"><mat-icon>phone</mat-icon><span>{{ resume.basics.phone
+              }}</span></div>
+          <div *ngIf="resume.basics.location" class="rm-ci"><mat-icon>location_on</mat-icon><span>{{
+              resume.basics.location }}</span></div>
+          <div *ngIf="resume.basics.linkedin" class="rm-ci"><span><i class="fab fa-linkedin"
+                style="color:#ffffff; margin-right:6px;"></i>{{resume.basics.linkedin }}</span></div>
+          <ng-container *ngIf="resume.skills.length > 0">
+            <div class="rm-divider"></div>
+            <div class="rm-side-title">Skills</div>
+            <div *ngFor="let s of resume.skills" class="rm-skill"><span>{{ s }}</span>
+              <div class="rm-skill-bar">
+                <div class="rm-skill-fill"></div>
+              </div>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="(resume.strengths?.length ?? 0) > 0">
+            <div class="rm-divider"></div>
+            <div class="rm-side-title">Strengths</div>
+            <div *ngFor="let s of resume.strengths" class="rm-strength">
+              <span>{{ s.name }}</span>
+              <div class="rm-str-stars"><span *ngFor="let star of starRange()"
+                  [style.opacity]="star <= s.level ? 1 : 0.3">★</span></div>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="resume.languages.length > 0">
+            <div class="rm-divider"></div>
+            <div class="rm-side-title">Languages</div>
+            <div *ngFor="let l of resume.languages" class="rm-lang">{{ l }}</div>
+          </ng-container>
+        </div>
+        <div class="rm-main">
+          <div *ngIf="resume.summary" class="rm-section">
+            <div class="rm-section-title" [style.color]="accentColor">Summary</div>
+            <p>{{ resume.summary }}</p>
+          </div>
+          <div *ngIf="resume.experience.length > 0" class="rm-section">
+            <div class="rm-section-title" [style.color]="accentColor">Experience</div>
+            <div *ngFor="let exp of resume.experience" class="rm-item">
+              <div class="rm-dot" [style.background]="accentColor"></div>
+              <div style="flex:1">
+                <div class="rm-ih"><strong>{{ exp.position }}</strong><span>{{ exp.startDate }} – {{ exp.current ?
+                    'Present' : exp.endDate }}</span></div>
+                <div class="rm-co">{{ exp.company }}</div>
+                <p class="rm-desc" [innerHTML]="safeDesc(exp.description)"></p>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="resume.education.length > 0" class="rm-section">
+            <div class="rm-section-title" [style.color]="accentColor">Education</div>
+            <div *ngFor="let edu of resume.education" class="rm-item">
+              <div class="rm-dot" [style.background]="accentColor"></div>
+              <div style="flex:1">
+                <div class="rm-ih"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span>{{ edu.startDate }} – {{
+                    edu.endDate }}</span></div>
+                <div class="rm-co">{{ edu.institution }}<span *ngIf="edu.gpa"> | {{ edu.gpa }}</span></div>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="resume.certifications.length > 0" class="rm-section">
+            <div class="rm-section-title" [style.color]="accentColor">Certifications</div>
+            <div *ngFor="let c of resume.certifications" class="rm-item">
+              <div class="rm-dot" [style.background]="accentColor"></div>
+              <p>{{ c }}</p>
+            </div>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'modern'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-modern"><ng-container *ngTemplateOutlet="modernContent"></ng-container>
+            </div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-modern"><ng-container
+              *ngTemplateOutlet="modernContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 3. MINIMAL ════ -->
+      <ng-template #minimalContent>
+        <div class="rmin-header">
+          <div>
+            <div class="rmin-name">{{ resume.basics.name || 'Your Name' }}</div>
+            <div class="rmin-hl" [style.color]="accentColor">{{ resume.basics.headline }}</div>
+          </div>
+          <div class="rmin-contact">
+            <span *ngIf="resume.basics.email">{{ resume.basics.email }}</span>
+            <span *ngIf="resume.basics.phone">{{ resume.basics.phone }}</span>
+            <span *ngIf="resume.basics.location">{{ resume.basics.location }}</span>
+            <span *ngIf="resume.basics.linkedin"><i class="fab fa-linkedin"
+                style="color:#0A66C2; margin-right:6px;"></i>{{resume.basics.linkedin }}</span>
+          </div>
+        </div>
+        <hr [style.border-color]="accentColor">
+        <div *ngIf="resume.summary" class="rmin-s">
+          <div class="rmin-t" [style.color]="accentColor">Summary</div>
+          <p>{{ resume.summary }}</p>
+        </div>
+        <div *ngIf="resume.experience.length > 0" class="rmin-s">
+          <div class="rmin-t" [style.color]="accentColor">Experience</div>
+          <div *ngFor="let exp of resume.experience" class="rmin-item">
+            <div class="rmin-row"><strong>{{ exp.position }}</strong><span>{{ exp.startDate }} – {{ exp.current ?
+                'Present' : exp.endDate }}</span></div>
+            <p style="color:#6b7280;font-style:italic">{{ exp.company }}</p>
+            <p [innerHTML]="safeDesc(exp.description)"></p>
+          </div>
+        </div>
+        <div *ngIf="resume.education.length > 0" class="rmin-s">
+          <div class="rmin-t" [style.color]="accentColor">Education</div>
+          <div *ngFor="let edu of resume.education" class="rmin-item">
+            <div class="rmin-row"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span>{{ edu.startDate }} – {{
+                edu.endDate }}</span></div>
+            <p style="color:#6b7280">{{ edu.institution }}</p>
+          </div>
+        </div>
+        <div class="rmin-two">
+          <div *ngIf="resume.skills.length > 0" style="flex:1">
+            <div class="rmin-t" [style.color]="accentColor">Skills</div>
+            <ul>
+              <li *ngFor="let s of resume.skills">{{ s }}</li>
+            </ul>
+          </div>
+          <div *ngIf="(resume.strengths?.length ?? 0) > 0" style="flex:1">
+            <div class="rmin-t" [style.color]="accentColor">Strengths</div>
+            <div *ngFor="let s of resume.strengths"
+              style="display:flex;justify-content:space-between;margin-bottom:3px;">
+              <span style="font-size:9px;">{{ s.name }}</span>
+              <span *ngFor="let star of starRange()" style="font-size:10px;"
+                [style.color]="star <= s.level ? accentColor : '#d1d5db'">★</span>
+            </div>
+          </div>
+          <div *ngIf="resume.languages.length > 0" style="flex:1">
+            <div class="rmin-t" [style.color]="accentColor">Languages</div>
+            <ul>
+              <li *ngFor="let l of resume.languages">{{ l }}</li>
+            </ul>
+          </div>
+        </div>
+        <div *ngIf="resume.certifications.length > 0" class="rmin-s">
+          <div class="rmin-t" [style.color]="accentColor">Certifications</div>
+          <ul>
+            <li *ngFor="let c of resume.certifications">{{ c }}</li>
+          </ul>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'minimal'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-minimal"><ng-container *ngTemplateOutlet="minimalContent"></ng-container>
+            </div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-minimal"><ng-container
+              *ngTemplateOutlet="minimalContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 4. EXECUTIVE ════ -->
+      <ng-template #executiveContent>
+        <div class="rex-top" [style.border-color]="accentColor">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <img *ngIf="resume.basics.photo" [src]="resume.basics.photo"
+              style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:3px solid currentColor;flex-shrink:0;"
+              alt="photo">
+            <div>
+              <div class="rex-name">{{ resume.basics.name || 'Your Name' }}</div>
+              <div class="rex-hl">{{ resume.basics.headline }}</div>
+            </div>
+          </div>
+          <div class="rex-contact">
+            <span *ngIf="resume.basics.email">{{ resume.basics.email }}</span><span
+              *ngIf="resume.basics.email && resume.basics.phone" class="rex-sep">|</span>
+            <span *ngIf="resume.basics.phone">{{ resume.basics.phone }}</span><span
+              *ngIf="resume.basics.phone && resume.basics.location" class="rex-sep">|</span>
+            <span *ngIf="resume.basics.location">{{ resume.basics.location }}</span><span
+              *ngIf="resume.basics.location && resume.basics.linkedin" class="rex-sep">|</span>
+            <span *ngIf="resume.basics.linkedin"><i class="fab fa-linkedin"
+                style="color:#0A66C2; margin-right:6px;"></i>{{resume.basics.linkedin }}</span>
+          </div>
+        </div>
+        <div *ngIf="resume.summary" class="rex-s">
+          <div class="rex-t" [style.color]="accentColor">Executive Summary</div>
+          <p>{{ resume.summary }}</p>
+        </div>
+        <div *ngIf="resume.experience.length > 0" class="rex-s">
+          <div class="rex-t" [style.color]="accentColor">Professional Experience</div>
+          <div *ngFor="let exp of resume.experience" class="rex-item">
+            <div class="rex-ih">
+              <div><strong class="rex-pos">{{ exp.position }}</strong><span class="rex-co">{{ exp.company }}</span>
+              </div><span class="rex-date">{{ exp.startDate }} – {{ exp.current ? 'Present' : exp.endDate }}</span>
+            </div>
+            <p class="rex-desc" [innerHTML]="safeDesc(exp.description)"></p>
+          </div>
+        </div>
+        <div *ngIf="resume.education.length > 0" class="rex-s">
+          <div class="rex-t" [style.color]="accentColor">Education</div>
+          <div *ngFor="let edu of resume.education" class="rex-item">
+            <div class="rex-ih">
+              <div><strong class="rex-pos">{{ edu.degree }} in {{ edu.field }}</strong><span class="rex-co">{{
+                  edu.institution }}</span></div><span class="rex-date">{{ edu.startDate }} – {{ edu.endDate }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="rex-two">
+          <div *ngIf="resume.skills.length > 0" class="rex-left">
+            <div class="rex-t" [style.color]="accentColor">Core Competencies</div>
+            <div class="rex-tags"><span *ngFor="let s of resume.skills" class="rex-tag"
+                [style.background]="accentColor">{{ s }}</span></div>
+          </div>
+          <div *ngIf="(resume.strengths?.length ?? 0) > 0" class="rex-right">
+            <div class="rex-t" [style.color]="accentColor">Strengths</div>
+            <div *ngFor="let s of resume.strengths"
+              style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:9px;">{{
+                s.name }}</span><span *ngFor="let star of starRange()" style="font-size:10px;"
+                [style.color]="star <= s.level ? accentColor : '#d1d5db'">★</span></div>
+          </div>
+          <div *ngIf="resume.certifications.length > 0" class="rex-right">
+            <div class="rex-t" [style.color]="accentColor">Certifications</div>
+            <ul>
+              <li *ngFor="let c of resume.certifications">{{ c }}</li>
+            </ul>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'executive'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-executive"><ng-container
+                *ngTemplateOutlet="executiveContent"></ng-container></div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-executive"><ng-container
+              *ngTemplateOutlet="executiveContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 5. CORPORATE ════ -->
+      <ng-template #corporateContent>
+        <div class="corp-header" [style.background]="accentColor">
+          <img *ngIf="resume.basics.photo" [src]="resume.basics.photo"
+            style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.3);flex-shrink:0;"
+            alt="photo">
+          <div class="corp-header-left">
+            <h1 class="corp-name">{{ resume.basics.name || 'Your Name' }}</h1>
+            <p class="corp-hl">{{ resume.basics.headline }}</p>
+          </div>
+          <div class="corp-header-right">
+            <div *ngIf="resume.basics.email" class="corp-ci"><mat-icon>email</mat-icon><span>{{ resume.basics.email
+                }}</span></div>
+            <div *ngIf="resume.basics.phone" class="corp-ci"><mat-icon>phone</mat-icon><span>{{ resume.basics.phone
+                }}</span></div>
+            <div *ngIf="resume.basics.location" class="corp-ci"><mat-icon>location_on</mat-icon><span>{{
+                resume.basics.location }}</span></div>
+            <div *ngIf="resume.basics.linkedin" class="corp-ci"> <mat-icon>link</mat-icon><span>{{
+                resume.basics.linkedin }}</span></div>
+          </div>
+        </div>
+        <div class="corp-body">
+          <ng-container *ngIf="resume.summary">
+            <h2 class="corp-sec-title" [style.color]="accentColor">Profile</h2>
+            <div class="corp-rule" [style.background]="accentColor"></div>
+            <p class="corp-para">{{ resume.summary }}</p>
+          </ng-container>
+          <ng-container *ngIf="resume.experience.length > 0">
+            <h2 class="corp-sec-title" [style.color]="accentColor">Work Experience</h2>
+            <div class="corp-rule" [style.background]="accentColor"></div>
+            <div *ngFor="let exp of resume.experience" class="corp-item">
+              <div class="corp-item-head">
+                <div class="corp-item-left"><strong class="corp-pos">{{ exp.position }}</strong><span
+                    class="corp-company">{{ exp.company }}</span></div><span class="corp-badge"
+                  [style.background]="accentColor">{{ exp.startDate }} – {{ exp.current ? 'Present' : exp.endDate
+                  }}</span>
+              </div>
+              <p class="corp-desc" [innerHTML]="safeDesc(exp.description)"></p>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="resume.education.length > 0">
+            <h2 class="corp-sec-title" [style.color]="accentColor">Education</h2>
+            <div class="corp-rule" [style.background]="accentColor"></div>
+            <div *ngFor="let edu of resume.education" class="corp-item">
+              <div class="corp-item-head">
+                <div class="corp-item-left"><strong class="corp-pos">{{ edu.degree }} — {{ edu.field }}</strong><span
+                    class="corp-company">{{ edu.institution }}</span></div><span class="corp-badge"
+                  [style.background]="accentColor">{{ edu.startDate }} – {{ edu.endDate }}</span>
+              </div>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="(resume.strengths?.length ?? 0) > 0">
+            <h2 class="corp-sec-title" [style.color]="accentColor">Strengths</h2>
+            <div class="corp-rule" [style.background]="accentColor"></div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+              <div *ngFor="let s of resume.strengths" style="display:flex;align-items:center;gap:6px;min-width:150px;">
+                <span style="font-size:9px;flex:1;">{{ s.name }}</span>
+                <span *ngFor="let star of starRange()" style="font-size:10px;"
+                  [style.color]="star <= s.level ? accentColor : '#d1d5db'">★</span>
+              </div>
+            </div>
+          </ng-container>
+          <div class="corp-two-col">
+            <div *ngIf="resume.skills.length > 0" class="corp-col">
+              <h2 class="corp-sec-title" [style.color]="accentColor">Skills</h2>
+              <div class="corp-rule" [style.background]="accentColor"></div>
+              <div class="corp-tags"><span *ngFor="let s of resume.skills" class="corp-tag"
+                  [style.border-color]="accentColor" [style.color]="accentColor">{{ s }}</span></div>
+            </div>
+            <div *ngIf="resume.languages.length > 0" class="corp-col">
+              <h2 class="corp-sec-title" [style.color]="accentColor">Languages</h2>
+              <div class="corp-rule" [style.background]="accentColor"></div>
+              <p class="corp-para">{{ resume.languages.join(' • ') }}</p>
+            </div>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'corporate'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-corporate"><ng-container
+                *ngTemplateOutlet="corporateContent"></ng-container></div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-corporate"><ng-container
+              *ngTemplateOutlet="corporateContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 6. CREATIVE ════ -->
+      <ng-template #creativeContent>
+        <div class="cre-left-bar" [style.background]="accentColor"></div>
+        <div class="cre-header">
+          <img *ngIf="resume.basics.photo" [src]="resume.basics.photo"
+            style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:3px solid currentColor;flex-shrink:0;"
+            [style.border-color]="accentColor" alt="photo">
+          <div *ngIf="!resume.basics.photo" class="cre-avatar" [style.border-color]="accentColor">{{ (resume.basics.name
+            || 'A')[0].toUpperCase() }}</div>
+          <div class="cre-header-info">
+            <h1 class="cre-name" [style.color]="accentColor">{{ resume.basics.name || 'Your Name' }}</h1>
+            <p class="cre-hl">{{ resume.basics.headline }}</p>
+            <div class="cre-contact"><span *ngIf="resume.basics.email">{{ resume.basics.email }}</span><span
+                *ngIf="resume.basics.phone">{{ resume.basics.phone }}</span>
+              <span *ngIf="resume.basics.location">{{resume.basics.location }}</span>
+              <span *ngIf="resume.basics.linkedin">{{resume.basics.linkedin }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="cre-body">
+          <div class="cre-main">
+            <ng-container *ngIf="resume.summary">
+              <div class="cre-sec-label" [style.background]="accentColor">About</div>
+              <p class="cre-para">{{ resume.summary }}</p>
+            </ng-container>
+            <ng-container *ngIf="resume.experience.length > 0">
+              <div class="cre-sec-label" [style.background]="accentColor">Experience</div>
+              <div *ngFor="let exp of resume.experience" class="cre-item">
+                <div class="cre-item-top"><strong>{{ exp.position }}</strong><span class="cre-date">{{ exp.startDate }}
+                    – {{ exp.current ? 'Present' : exp.endDate }}</span></div>
+                <em class="cre-co">{{ exp.company }}</em>
+                <p class="cre-para" [innerHTML]="safeDesc(exp.description)"></p>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="resume.education.length > 0">
+              <div class="cre-sec-label" [style.background]="accentColor">Education</div>
+              <div *ngFor="let edu of resume.education" class="cre-item">
+                <div class="cre-item-top"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span class="cre-date">{{
+                    edu.startDate }} – {{ edu.endDate }}</span></div>
+                <em class="cre-co">{{ edu.institution }}<span *ngIf="edu.gpa"> | {{ edu.gpa }}</span></em>
+              </div>
+            </ng-container>
+          </div>
+          <div class="cre-side">
+            <ng-container *ngIf="resume.skills.length > 0">
+              <div class="cre-side-title" [style.color]="accentColor">Skills</div>
+              <div class="cre-side-tags"><span *ngFor="let s of resume.skills" class="cre-tag"
+                  [style.background]="accentColor">{{ s }}</span></div>
+            </ng-container>
+            <ng-container *ngIf="(resume.strengths?.length ?? 0) > 0">
+              <div class="cre-side-title" [style.color]="accentColor">Strengths</div>
+              <div *ngFor="let s of resume.strengths" style="margin-bottom:5px;">
+                <div style="font-size:9px;color:#374151;">{{ s.name }}</div>
+                <div><span *ngFor="let star of starRange()" style="font-size:10px;"
+                    [style.color]="star <= s.level ? accentColor : '#d1d5db'">★</span></div>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="resume.languages.length > 0">
+              <div class="cre-side-title" [style.color]="accentColor">Languages</div>
+              <div *ngFor="let l of resume.languages" class="cre-side-item">{{ l }}</div>
+            </ng-container>
+            <ng-container *ngIf="resume.certifications.length > 0">
+              <div class="cre-side-title" [style.color]="accentColor">Certifications</div>
+              <div *ngFor="let c of resume.certifications" class="cre-side-item">{{ c }}</div>
+            </ng-container>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'creative'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-creative"><ng-container *ngTemplateOutlet="creativeContent"></ng-container>
+            </div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-creative"><ng-container
+              *ngTemplateOutlet="creativeContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 7. ELEGANT ════ -->
+      <ng-template #elegantContent>
+        <div class="ele-header">
+          <img *ngIf="resume.basics.photo" [src]="resume.basics.photo"
+            style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid currentColor;margin:0 auto 8px;display:block;"
+            [style.border-color]="accentColor" alt="photo">
+          <div class="ele-topline" [style.background]="accentColor"></div>
+          <h1 class="ele-name">{{ resume.basics.name || 'Your Name' }}</h1>
+          <p class="ele-hl" [style.color]="accentColor">{{ resume.basics.headline }}</p>
+          <div class="ele-bottomline" [style.background]="accentColor"></div>
+          <div class="ele-contact">
+            <span *ngIf="resume.basics.email">{{ resume.basics.email }}</span>
+            <span *ngIf="resume.basics.phone">{{ resume.basics.phone }}</span>
+            <span *ngIf="resume.basics.location">{{resume.basics.location }}</span>
+            <span *ngIf="resume.basics.linkedin">{{resume.basics.linkedin }}</span>
+          </div>
+        </div>
+        <div class="ele-body">
+          <ng-container *ngIf="resume.summary">
+            <h2 class="ele-sec-title" [style.color]="accentColor">— Summary —</h2>
+            <p class="ele-para">{{ resume.summary }}</p>
+          </ng-container>
+          <ng-container *ngIf="resume.experience.length > 0">
+            <h2 class="ele-sec-title" [style.color]="accentColor">— Experience —</h2>
+            <div *ngFor="let exp of resume.experience" class="ele-item">
+              <div class="ele-item-head"><strong>{{ exp.position }}</strong><span class="ele-date">{{ exp.startDate }} –
+                  {{ exp.current ? 'Present' : exp.endDate }}</span></div>
+              <div class="ele-co" [style.color]="accentColor">{{ exp.company }}</div>
+              <p class="ele-para" [innerHTML]="safeDesc(exp.description)"></p>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="resume.education.length > 0">
+            <h2 class="ele-sec-title" [style.color]="accentColor">— Education —</h2>
+            <div *ngFor="let edu of resume.education" class="ele-item">
+              <div class="ele-item-head"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span class="ele-date">{{
+                  edu.startDate }} – {{ edu.endDate }}</span></div>
+              <div class="ele-co" [style.color]="accentColor">{{ edu.institution }}</div>
+            </div>
+          </ng-container>
+          <div class="ele-two-col">
+            <div *ngIf="resume.skills.length > 0">
+              <h2 class="ele-sec-title" [style.color]="accentColor">— Skills —</h2>
+              <p class="ele-para">{{ resume.skills.join(' · ') }}</p>
+            </div>
+            <div *ngIf="resume.languages.length > 0">
+              <h2 class="ele-sec-title" [style.color]="accentColor">— Languages —</h2>
+              <p class="ele-para">{{ resume.languages.join(' · ') }}</p>
+            </div>
+          </div>
+          <ng-container *ngIf="resume.certifications.length > 0">
+            <h2 class="ele-sec-title" [style.color]="accentColor">— Certifications —</h2>
+            <ul class="ele-list">
+              <li *ngFor="let c of resume.certifications">{{ c }}</li>
+            </ul>
+          </ng-container>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'elegant'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-elegant"><ng-container *ngTemplateOutlet="elegantContent"></ng-container>
+            </div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-elegant"><ng-container
+              *ngTemplateOutlet="elegantContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 8. TECH ════ -->
+      <ng-template #techContent>
+        <div class="tec-header" [style.background]="accentColor">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <img *ngIf="resume.basics.photo" [src]="resume.basics.photo"
+              style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.4);flex-shrink:0;"
+              alt="photo">
+            <div>
+              <div class="tec-tag-line">&lt;resume&gt;</div>
+              <h1 class="tec-name">{{ resume.basics.name || 'Your Name' }}</h1>
+              <p class="tec-role">{{ resume.basics.headline }}</p>
+            </div>
+          </div>
+          <div class="tec-contact">
+            <span *ngIf="resume.basics.email">📧 {{ resume.basics.email }}</span>
+            <span *ngIf="resume.basics.phone">📱 {{ resume.basics.phone }}</span>
+            <span *ngIf="resume.basics.location">📍 {{ resume.basics.location }}</span>
+            <span *ngIf="resume.basics.linkedin"><i class="fab fa-linkedin"
+                style="color:#f1f1f1; margin-right:6px;"></i>{{resume.basics.linkedin }}</span>
+          </div>
+        </div>
+        <div class="tec-body">
+          <ng-container *ngIf="resume.summary">
+            <div class="tec-sec-head"><span class="tec-slash" [style.color]="accentColor">// </span>About</div>
+            <p class="tec-para">{{ resume.summary }}</p>
+          </ng-container>
+          <ng-container *ngIf="resume.skills.length > 0">
+            <div class="tec-sec-head"><span class="tec-slash" [style.color]="accentColor">// </span>Tech Stack</div>
+            <div class="tec-tags"><span *ngFor="let s of resume.skills" class="tec-tag"
+                [style.border-color]="accentColor" [style.color]="accentColor">{{ s }}</span></div>
+          </ng-container>
+          <ng-container *ngIf="resume.experience.length > 0">
+            <div class="tec-sec-head"><span class="tec-slash" [style.color]="accentColor">// </span>Experience</div>
+            <div *ngFor="let exp of resume.experience" class="tec-item">
+              <div class="tec-item-head"><strong>{{ exp.position }}</strong><span class="tec-at"> &#64; </span><em>{{
+                  exp.company }}</em><span class="tec-date">{{ exp.startDate }} – {{ exp.current ? 'Present' :
+                  exp.endDate }}</span></div>
+              <p class="tec-para" [innerHTML]="safeDesc(exp.description)"></p>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="resume.education.length > 0">
+            <div class="tec-sec-head"><span class="tec-slash" [style.color]="accentColor">// </span>Education</div>
+            <div *ngFor="let edu of resume.education" class="tec-item">
+              <div class="tec-item-head"><strong>{{ edu.degree }}</strong><span class="tec-at"> — </span><em>{{
+                  edu.field }}</em></div>
+              <div class="tec-inst">{{ edu.institution }}<span *ngIf="edu.gpa"> | {{ edu.gpa }}</span></div>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="resume.certifications.length > 0">
+            <div class="tec-sec-head"><span class="tec-slash" [style.color]="accentColor">// </span>Certifications</div>
+            <ul class="tec-list">
+              <li *ngFor="let c of resume.certifications">{{ c }}</li>
+            </ul>
+          </ng-container>
+          <div class="tec-footer" [style.color]="accentColor">&lt;/resume&gt;</div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'tech'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-tech"><ng-container *ngTemplateOutlet="techContent"></ng-container></div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-tech"><ng-container
+              *ngTemplateOutlet="techContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 9. BOLD ════ -->
+      <ng-template #boldContent>
+        <div class="bol-header">
+          <div style="display:flex;align-items:center;gap:16px;">
+            <img *ngIf="resume.basics.photo" [src]="resume.basics.photo"
+              style="width:64px;height:64px;border-radius:8px;object-fit:cover;border:3px solid currentColor;flex-shrink:0;"
+              [style.border-color]="accentColor" alt="photo">
+            <div>
+              <div class="bol-accent-bar" [style.background]="accentColor"></div>
+              <h1 class="bol-name">{{ resume.basics.name || 'YOUR NAME' }}</h1>
+              <p class="bol-hl" [style.color]="accentColor">{{ resume.basics.headline }}</p>
+            </div>
+          </div>
+          <div class="bol-contact">
+            <span *ngIf="resume.basics.email">{{ resume.basics.email }}</span>
+            <span *ngIf="resume.basics.phone">{{ resume.basics.phone }}</span>
+            <span *ngIf="resume.basics.location">{{ resume.basics.location }}</span>
+            <span *ngIf="resume.basics.linkedin"><i class="fab fa-linkedin"
+                style="color:#0A66C2; margin-right:6px;"></i>{{resume.basics.linkedin }}</span>
+          </div>
+        </div>
+        <div class="bol-body">
+          <ng-container *ngIf="resume.summary">
+            <div class="bol-sec-title" [style.background]="accentColor">SUMMARY</div>
+            <p class="bol-para">{{ resume.summary }}</p>
+          </ng-container>
+          <ng-container *ngIf="resume.experience.length > 0">
+            <div class="bol-sec-title" [style.background]="accentColor">EXPERIENCE</div>
+            <div *ngFor="let exp of resume.experience" class="bol-item">
+              <div class="bol-item-head"><strong class="bol-pos">{{ exp.position }}</strong><span class="bol-date">{{
+                  exp.startDate }} – {{ exp.current ? 'Present' : exp.endDate }}</span></div>
+              <div class="bol-company" [style.color]="accentColor">{{ exp.company }}</div>
+              <p class="bol-para" [innerHTML]="safeDesc(exp.description)"></p>
+            </div>
+          </ng-container>
+          <ng-container *ngIf="resume.education.length > 0">
+            <div class="bol-sec-title" [style.background]="accentColor">EDUCATION</div>
+            <div *ngFor="let edu of resume.education" class="bol-item">
+              <div class="bol-item-head"><strong class="bol-pos">{{ edu.degree }} in {{ edu.field }}</strong><span
+                  class="bol-date">{{ edu.startDate }} – {{ edu.endDate }}</span></div>
+              <div class="bol-company" [style.color]="accentColor">{{ edu.institution }}</div>
+            </div>
+          </ng-container>
+          <div class="bol-two-col">
+            <div *ngIf="resume.skills.length > 0" class="bol-col">
+              <div class="bol-sec-title" [style.background]="accentColor">SKILLS</div>
+              <div class="bol-tags"><span *ngFor="let s of resume.skills" class="bol-tag" [style.color]="accentColor"
+                  [style.border-color]="accentColor">{{ s }}</span></div>
+            </div>
+            <div *ngIf="resume.languages.length > 0" class="bol-col">
+              <div class="bol-sec-title" [style.background]="accentColor">LANGUAGES</div>
+              <p class="bol-para">{{ resume.languages.join(', ') }}</p>
+            </div>
+          </div>
+          <ng-container *ngIf="resume.certifications.length > 0">
+            <div class="bol-sec-title" [style.background]="accentColor">CERTIFICATIONS</div>
+            <ul class="bol-list">
+              <li *ngFor="let c of resume.certifications">{{ c }}</li>
+            </ul>
+          </ng-container>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'bold'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-bold"><ng-container *ngTemplateOutlet="boldContent"></ng-container></div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-bold"><ng-container
+              *ngTemplateOutlet="boldContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 10. CLEAN ════ -->
+      <ng-template #cleanContent>
+        <div class="cln-header">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <img *ngIf="resume.basics.photo" [src]="resume.basics.photo"
+              style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:3px solid currentColor;flex-shrink:0;"
+              [style.border-color]="accentColor" alt="photo">
+            <div>
+              <h1 class="cln-name">{{ resume.basics.name || 'Your Name' }}</h1>
+              <div class="cln-hl" [style.color]="accentColor">{{ resume.basics.headline }}</div>
+            </div>
+          </div>
+          <div class="cln-contact">
+            <span *ngIf="resume.basics.email"><mat-icon>email</mat-icon>{{ resume.basics.email
+              }}</span>
+            <span *ngIf="resume.basics.phone"><mat-icon>phone</mat-icon>{{ resume.basics.phone }}</span>
+            <span *ngIf="resume.basics.location"><mat-icon>location_on</mat-icon>{{ resume.basics.location }}</span>
+            <span *ngIf="resume.basics.linkedin"><mat-icon>link</mat-icon>{{resume.basics.linkedin }}</span>
+          </div>
+        </div>
+        <div class="cln-body">
+          <div class="cln-sidebar">
+            <ng-container *ngIf="resume.skills.length > 0">
+              <h3 class="cln-side-title" [style.color]="accentColor">Skills</h3>
+              <div *ngFor="let s of resume.skills" class="cln-skill"><span class="cln-skill-name">{{ s }}</span>
+                <div class="cln-bar">
+                  <div class="cln-bar-fill" [style.background]="accentColor"></div>
+                </div>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="(resume.strengths?.length ?? 0) > 0">
+              <h3 class="cln-side-title" [style.color]="accentColor">Strengths</h3>
+              <div *ngFor="let s of resume.strengths" style="margin-bottom:6px;"><span
+                  style="font-size:9px;color:#374151;display:block;margin-bottom:2px;">{{ s.name }}</span><span
+                  *ngFor="let star of starRange()" style="font-size:11px;"
+                  [style.color]="star <= s.level ? accentColor : '#d1d5db'">★</span></div>
+            </ng-container>
+            <ng-container *ngIf="resume.languages.length > 0">
+              <h3 class="cln-side-title" [style.color]="accentColor">Languages</h3>
+              <div *ngFor="let l of resume.languages" class="cln-side-item">{{ l }}</div>
+            </ng-container>
+            <ng-container *ngIf="resume.certifications.length > 0">
+              <h3 class="cln-side-title" [style.color]="accentColor">Certifications</h3>
+              <div *ngFor="let c of resume.certifications" class="cln-side-item">{{ c }}</div>
+            </ng-container>
+          </div>
+          <div class="cln-main">
+            <ng-container *ngIf="resume.summary">
+              <h2 class="cln-sec-title" [style.color]="accentColor">Summary</h2>
+              <div class="cln-rule" [style.background]="accentColor"></div>
+              <p class="cln-para">{{ resume.summary }}</p>
+            </ng-container>
+            <ng-container *ngIf="resume.experience.length > 0">
+              <h2 class="cln-sec-title" [style.color]="accentColor">Experience</h2>
+              <div class="cln-rule" [style.background]="accentColor"></div>
+              <div *ngFor="let exp of resume.experience" class="cln-item">
+                <div class="cln-item-head"><strong>{{ exp.position }}</strong><span class="cln-date">{{ exp.startDate }}
+                    – {{ exp.current ? 'Present' : exp.endDate }}</span></div>
+                <div class="cln-company">{{ exp.company }}</div>
+                <p class="cln-para" [innerHTML]="safeDesc(exp.description)"></p>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="resume.education.length > 0">
+              <h2 class="cln-sec-title" [style.color]="accentColor">Education</h2>
+              <div class="cln-rule" [style.background]="accentColor"></div>
+              <div *ngFor="let edu of resume.education" class="cln-item">
+                <div class="cln-item-head"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span class="cln-date">{{
+                    edu.startDate }} – {{ edu.endDate }}</span></div>
+                <div class="cln-company">{{ edu.institution }}</div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'clean'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-clean"><ng-container *ngTemplateOutlet="cleanContent"></ng-container></div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-clean"><ng-container
+              *ngTemplateOutlet="cleanContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 11. NAVY PRO ════ -->
+      <ng-template #navyContent>
+        <div class="nvy-header">
+          <div class="nvy-left">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <img *ngIf="resume.basics.photo" [src]="resume.basics.photo"
+                style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.3);flex-shrink:0;"
+                alt="photo">
+              <div>
+                <h1 class="nvy-name">{{ resume.basics.name || 'Your Name' }}</h1>
+                <p class="nvy-hl">{{ resume.basics.headline }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="nvy-right">
+            <div *ngIf="resume.basics.email" class="nvy-ci">✉ {{ resume.basics.email }}</div>
+            <div *ngIf="resume.basics.phone" class="nvy-ci">✆ {{ resume.basics.phone }}</div>
+            <div *ngIf="resume.basics.location" class="nvy-ci">⊙ {{ resume.basics.location }}</div>
+            <div *ngIf="resume.basics.linkedin" class="nvy-ci"><i class="fab fa-linkedin"
+                style="color:#ffffff; margin-right:6px;"></i>{{resume.basics.linkedin }}</div>
+          </div>
+        </div>
+        <div class="nvy-body">
+          <div *ngIf="resume.summary" class="nvy-sec">
+            <div class="nvy-sec-title" [style.color]="accentColor">PROFILE</div>
+            <div class="nvy-rule" [style.background]="accentColor"></div>
+            <p class="nvy-para">{{ resume.summary }}</p>
+          </div>
+          <div *ngIf="resume.experience.length > 0" class="nvy-sec">
+            <div class="nvy-sec-title" [style.color]="accentColor">EXPERIENCE</div>
+            <div class="nvy-rule" [style.background]="accentColor"></div>
+            <div *ngFor="let exp of resume.experience" class="nvy-item">
+              <div class="nvy-item-head">
+                <div><strong class="nvy-pos">{{ exp.position }}</strong><span class="nvy-co">{{ exp.company }}</span>
+                </div><span class="nvy-date" [style.background]="accentColor">{{ exp.startDate }} – {{ exp.current ?
+                  'Present' : exp.endDate }}</span>
+              </div>
+              <p class="nvy-para" [innerHTML]="safeDesc(exp.description)"></p>
+            </div>
+          </div>
+          <div *ngIf="resume.education.length > 0" class="nvy-sec">
+            <div class="nvy-sec-title" [style.color]="accentColor">EDUCATION</div>
+            <div class="nvy-rule" [style.background]="accentColor"></div>
+            <div *ngFor="let edu of resume.education" class="nvy-item">
+              <div class="nvy-item-head">
+                <div><strong class="nvy-pos">{{ edu.degree }} — {{ edu.field }}</strong><span class="nvy-co">{{
+                    edu.institution }}</span></div><span class="nvy-date" [style.background]="accentColor">{{
+                  edu.startDate }} – {{ edu.endDate }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="nvy-two">
+            <div *ngIf="resume.skills.length > 0" class="nvy-col">
+              <div class="nvy-sec-title" [style.color]="accentColor">SKILLS</div>
+              <div class="nvy-rule" [style.background]="accentColor"></div>
+              <div class="nvy-tags"><span *ngFor="let s of resume.skills" class="nvy-tag"
+                  [style.background]="accentColor">{{ s }}</span></div>
+            </div>
+            <div *ngIf="resume.languages.length > 0" class="nvy-col">
+              <div class="nvy-sec-title" [style.color]="accentColor">LANGUAGES</div>
+              <div class="nvy-rule" [style.background]="accentColor"></div>
+              <p class="nvy-para">{{ resume.languages.join(' · ') }}</p>
+            </div>
+          </div>
+          <div *ngIf="resume.certifications.length > 0" class="nvy-sec">
+            <div class="nvy-sec-title" [style.color]="accentColor">CERTIFICATIONS</div>
+            <div class="nvy-rule" [style.background]="accentColor"></div>
+            <ul class="nvy-list">
+              <li *ngFor="let c of resume.certifications">{{ c }}</li>
+            </ul>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'navy'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-navy"><ng-container *ngTemplateOutlet="navyContent"></ng-container></div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-navy"><ng-container
+              *ngTemplateOutlet="navyContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 12. TEAL FRESH ════ -->
+      <ng-template #tealContent>
+        <div class="tel-header" [style.background]="accentColor">
+          <img *ngIf="resume.basics.photo" [src]="resume.basics.photo"
+            style="width:58px;height:58px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.4);flex-shrink:0;"
+            alt="photo">
+          <div *ngIf="!resume.basics.photo" class="tel-avatar">{{ (resume.basics.name || 'A')[0].toUpperCase() }}</div>
+          <div class="tel-info">
+            <h1 class="tel-name">{{ resume.basics.name || 'Your Name' }}</h1>
+            <p class="tel-hl">{{ resume.basics.headline }}</p>
+            <div class="tel-contact">
+              <span *ngIf="resume.basics.email">{{ resume.basics.email }}</span>
+              <span *ngIf="resume.basics.phone">{{ resume.basics.phone }}</span>
+              <span *ngIf="resume.basics.location">{{ resume.basics.location }}</span>
+              <span *ngIf="resume.basics.linkedin"><i class="fab fa-linkedin"
+                  style="color:#ffffff; margin-right:6px;"></i>{{resume.basics.linkedin }}</span>
+
+            </div>
+          </div>
+        </div>
+        <div class="tel-body">
+          <div *ngIf="resume.summary" class="tel-sec">
+            <div class="tel-title" [style.color]="accentColor"><span class="tel-bar"
+                [style.background]="accentColor"></span>Summary</div>
+            <p class="tel-para">{{ resume.summary }}</p>
+          </div>
+          <div *ngIf="resume.experience.length > 0" class="tel-sec">
+            <div class="tel-title" [style.color]="accentColor"><span class="tel-bar"
+                [style.background]="accentColor"></span>Experience</div>
+            <div *ngFor="let exp of resume.experience" class="tel-item">
+              <div class="tel-item-left" [style.border-color]="accentColor">
+                <div class="tel-dot" [style.background]="accentColor"></div>
+              </div>
+              <div class="tel-item-right">
+                <div class="tel-ih"><strong>{{ exp.position }}</strong><span class="tel-date">{{ exp.startDate }} – {{
+                    exp.current ? 'Present' : exp.endDate }}</span></div>
+                <div class="tel-co">{{ exp.company }}</div>
+                <p class="tel-para" [innerHTML]="safeDesc(exp.description)"></p>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="resume.education.length > 0" class="tel-sec">
+            <div class="tel-title" [style.color]="accentColor"><span class="tel-bar"
+                [style.background]="accentColor"></span>Education</div>
+            <div *ngFor="let edu of resume.education" class="tel-item">
+              <div class="tel-item-left" [style.border-color]="accentColor">
+                <div class="tel-dot" [style.background]="accentColor"></div>
+              </div>
+              <div class="tel-item-right">
+                <div class="tel-ih"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span class="tel-date">{{
+                    edu.startDate }} – {{ edu.endDate }}</span></div>
+                <div class="tel-co">{{ edu.institution }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="tel-two">
+            <div *ngIf="resume.skills.length > 0">
+              <div class="tel-title" [style.color]="accentColor"><span class="tel-bar"
+                  [style.background]="accentColor"></span>Skills</div>
+              <div class="tel-tags"><span *ngFor="let s of resume.skills" class="tel-tag"
+                  [style.border-color]="accentColor" [style.color]="accentColor">{{ s }}</span></div>
+            </div>
+            <div *ngIf="resume.languages.length > 0">
+              <div class="tel-title" [style.color]="accentColor"><span class="tel-bar"
+                  [style.background]="accentColor"></span>Languages</div>
+              <ul class="tel-list">
+                <li *ngFor="let l of resume.languages">{{ l }}</li>
+              </ul>
+            </div>
+          </div>
+          <div *ngIf="resume.certifications.length > 0" class="tel-sec">
+            <div class="tel-title" [style.color]="accentColor"><span class="tel-bar"
+                [style.background]="accentColor"></span>Certifications</div>
+            <ul class="tel-list">
+              <li *ngFor="let c of resume.certifications">{{ c }}</li>
+            </ul>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'teal'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-teal"><ng-container *ngTemplateOutlet="tealContent"></ng-container></div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-teal"><ng-container
+              *ngTemplateOutlet="tealContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 13. ROSE GOLD ════ -->
+      <ng-template #roseContent>
+        <div class="ros-header">
+          <div class="ros-top-bar" [style.background]="accentColor"></div>
+          <div class="ros-title-area">
+            <div style="display:flex;align-items:center;gap:14px;">
+              <img *ngIf="resume.basics.photo" [src]="resume.basics.photo"
+                style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:3px solid currentColor;flex-shrink:0;"
+                [style.border-color]="accentColor" alt="photo">
+              <div>
+                <h1 class="ros-name">{{ resume.basics.name || 'Your Name' }}</h1>
+                <div class="ros-hl" [style.color]="accentColor">{{ resume.basics.headline }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="ros-contact" [style.background]="accentColor">
+            <span *ngIf="resume.basics.email">{{resume.basics.email }}</span>
+            <span *ngIf="resume.basics.phone">{{ resume.basics.phone }}</span>
+            <span *ngIf="resume.basics.location">{{ resume.basics.location }}</span>
+            <span *ngIf="resume.basics.linkedin"><i class="fab fa-linkedin"
+                style="color:#ffffff; margin-right:6px;"></i>{{resume.basics.linkedin }}</span>
+
+          </div>
+        </div>
+        <div class="ros-body">
+          <div class="ros-main">
+            <div *ngIf="resume.summary" class="ros-sec">
+              <div class="ros-sec-title" [style.color]="accentColor">About Me</div>
+              <p class="ros-para">{{ resume.summary }}</p>
+            </div>
+            <div *ngIf="resume.experience.length > 0" class="ros-sec">
+              <div class="ros-sec-title" [style.color]="accentColor">Experience</div>
+              <div *ngFor="let exp of resume.experience" class="ros-item">
+                <div class="ros-ih"><strong>{{ exp.position }}</strong><span class="ros-date">{{ exp.startDate }} – {{
+                    exp.current ? 'Present' : exp.endDate }}</span></div>
+                <div class="ros-co" [style.color]="accentColor">{{ exp.company }}</div>
+                <p class="ros-para" [innerHTML]="safeDesc(exp.description)"></p>
+              </div>
+            </div>
+            <div *ngIf="resume.education.length > 0" class="ros-sec">
+              <div class="ros-sec-title" [style.color]="accentColor">Education</div>
+              <div *ngFor="let edu of resume.education" class="ros-item">
+                <div class="ros-ih"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span class="ros-date">{{
+                    edu.startDate }} – {{ edu.endDate }}</span></div>
+                <div class="ros-co" [style.color]="accentColor">{{ edu.institution }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="ros-side" [style.border-color]="accentColor">
+            <ng-container *ngIf="resume.skills.length > 0">
+              <div class="ros-side-title" [style.color]="accentColor">Skills</div>
+              <div *ngFor="let s of resume.skills" class="ros-side-item"><span class="ros-dot"
+                  [style.background]="accentColor"></span>{{ s }}</div>
+            </ng-container>
+            <ng-container *ngIf="resume.languages.length > 0">
+              <div class="ros-side-title" [style.color]="accentColor">Languages</div>
+              <div *ngFor="let l of resume.languages" class="ros-side-item"><span class="ros-dot"
+                  [style.background]="accentColor"></span>{{ l }}</div>
+            </ng-container>
+            <ng-container *ngIf="resume.certifications.length > 0">
+              <div class="ros-side-title" [style.color]="accentColor">Certifications</div>
+              <div *ngFor="let c of resume.certifications" class="ros-side-item"><span class="ros-dot"
+                  [style.background]="accentColor"></span>{{ c }}</div>
+            </ng-container>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'rose'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-rose"><ng-container *ngTemplateOutlet="roseContent"></ng-container></div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-rose"><ng-container
+              *ngTemplateOutlet="roseContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 14. SLATE EDGE ════ -->
+      <ng-template #slateContent>
+        <div class="slt-header">
+          <div class="slt-name-area">
+            <div style="display:flex;align-items:center;gap:14px;">
+              <img *ngIf="resume.basics.photo" [src]="resume.basics.photo"
+                style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:3px solid currentColor;flex-shrink:0;"
+                [style.border-color]="accentColor" alt="photo">
+              <div>
+                <h1 class="slt-name">{{ resume.basics.name || 'Your Name' }}</h1>
+                <div class="slt-hl" [style.color]="accentColor">{{ resume.basics.headline }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="slt-stripe" [style.background]="accentColor"></div>
+          <div class="slt-contact">
+            <span *ngIf="resume.basics.email">{{ resume.basics.email }}</span>
+            <span *ngIf="resume.basics.phone">{{ resume.basics.phone }}</span>
+            <span *ngIf="resume.basics.location">{{ resume.basics.location }}</span>
+            <span *ngIf="resume.basics.linkedin"><i class="fab fa-linkedin"
+                style="color:#0A66C2; margin-right:6px;"></i>{{resume.basics.linkedin }}</span>
+          </div>
+        </div>
+        <div class="slt-body">
+          <div *ngIf="resume.summary" class="slt-sec">
+            <div class="slt-t" [style.background]="accentColor">Summary</div>
+            <p class="slt-para">{{ resume.summary }}</p>
+          </div>
+          <div *ngIf="resume.experience.length > 0" class="slt-sec">
+            <div class="slt-t" [style.background]="accentColor">Experience</div>
+            <div *ngFor="let exp of resume.experience" class="slt-item">
+              <div class="slt-timeline" [style.border-color]="accentColor">
+                <div class="slt-circle" [style.background]="accentColor"></div>
+              </div>
+              <div class="slt-content">
+                <div class="slt-ih"><strong>{{ exp.position }}</strong><span>{{ exp.startDate }} – {{ exp.current ?
+                    'Present' : exp.endDate }}</span></div>
+                <div class="slt-co">{{ exp.company }}</div>
+                <p class="slt-para" [innerHTML]="safeDesc(exp.description)"></p>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="resume.education.length > 0" class="slt-sec">
+            <div class="slt-t" [style.background]="accentColor">Education</div>
+            <div *ngFor="let edu of resume.education" class="slt-item">
+              <div class="slt-timeline" [style.border-color]="accentColor">
+                <div class="slt-circle" [style.background]="accentColor"></div>
+              </div>
+              <div class="slt-content">
+                <div class="slt-ih"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span>{{ edu.startDate }} – {{
+                    edu.endDate }}</span></div>
+                <div class="slt-co">{{ edu.institution }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="slt-two">
+            <div *ngIf="resume.skills.length > 0">
+              <div class="slt-t" [style.background]="accentColor">Skills</div>
+              <div class="slt-tags"><span *ngFor="let s of resume.skills" class="slt-tag"
+                  [style.border-color]="accentColor" [style.color]="accentColor">{{ s }}</span></div>
+            </div>
+            <div *ngIf="resume.languages.length > 0">
+              <div class="slt-t" [style.background]="accentColor">Languages</div>
+              <ul class="slt-list">
+                <li *ngFor="let l of resume.languages">{{ l }}</li>
+              </ul>
+            </div>
+          </div>
+          <div *ngIf="resume.certifications.length > 0" class="slt-sec">
+            <div class="slt-t" [style.background]="accentColor">Certifications</div>
+            <ul class="slt-list">
+              <li *ngFor="let c of resume.certifications">{{ c }}</li>
+            </ul>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'slate'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-slate"><ng-container *ngTemplateOutlet="slateContent"></ng-container></div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-slate"><ng-container
+              *ngTemplateOutlet="slateContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 15. FOREST ════ -->
+      <ng-template #forestContent>
+        <div class="frs-header" [style.background]="accentColor">
+          <div style="display:flex;align-items:center;gap:14px;"><img *ngIf="resume.basics.photo"
+              [src]="resume.basics.photo"
+              style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.4);flex-shrink:0;"
+              alt="photo">
+            <div>
+              <h1 class="frs-name">{{ resume.basics.name || 'Your Name' }}</h1>
+              <p class="frs-hl">{{ resume.basics.headline }}</p>
+            </div>
+          </div>
+          <div class="frs-contact">
+            <span *ngIf="resume.basics.email">{{ resume.basics.email }}</span>
+            <span *ngIf="resume.basics.phone">{{ resume.basics.phone }}</span>
+            <span *ngIf="resume.basics.location">{{ resume.basics.location }}</span>
+            <span *ngIf="resume.basics.linkedin"><i class="fab fa-linkedin"
+                style="color:#ffffff; margin-right:6px;"></i>{{resume.basics.linkedin }}</span>
+          </div>
+        </div>
+        <div class="frs-body">
+          <div class="frs-main">
+            <div *ngIf="resume.summary" class="frs-sec">
+              <div class="frs-sec-t" [style.color]="accentColor" [style.border-color]="accentColor">Profile</div>
+              <p class="frs-para">{{ resume.summary }}</p>
+            </div>
+            <div *ngIf="resume.experience.length > 0" class="frs-sec">
+              <div class="frs-sec-t" [style.color]="accentColor" [style.border-color]="accentColor">Experience</div>
+              <div *ngFor="let exp of resume.experience" class="frs-item">
+                <div class="frs-leaf" [style.background]="accentColor"></div>
+                <div style="flex:1">
+                  <div class="frs-ih"><strong>{{ exp.position }}</strong><span>{{ exp.startDate }} – {{ exp.current ?
+                      'Present' : exp.endDate }}</span></div>
+                  <div class="frs-co">{{ exp.company }}</div>
+                  <p class="frs-para" [innerHTML]="safeDesc(exp.description)"></p>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="resume.education.length > 0" class="frs-sec">
+              <div class="frs-sec-t" [style.color]="accentColor" [style.border-color]="accentColor">Education</div>
+              <div *ngFor="let edu of resume.education" class="frs-item">
+                <div class="frs-leaf" [style.background]="accentColor"></div>
+                <div style="flex:1">
+                  <div class="frs-ih"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span>{{ edu.startDate }} – {{
+                      edu.endDate }}</span></div>
+                  <div class="frs-co">{{ edu.institution }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="frs-side">
+            <ng-container *ngIf="resume.skills.length > 0">
+              <div class="frs-side-t" [style.background]="accentColor">Skills</div>
+              <div *ngFor="let s of resume.skills" class="frs-skill">▸ {{ s }}</div>
+            </ng-container>
+            <ng-container *ngIf="resume.languages.length > 0">
+              <div class="frs-side-t" [style.background]="accentColor">Languages</div>
+              <div *ngFor="let l of resume.languages" class="frs-skill">▸ {{ l }}</div>
+            </ng-container>
+            <ng-container *ngIf="resume.certifications.length > 0">
+              <div class="frs-side-t" [style.background]="accentColor">Certifications</div>
+              <div *ngFor="let c of resume.certifications" class="frs-skill">▸ {{ c }}</div>
+            </ng-container>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'forest'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-forest"><ng-container *ngTemplateOutlet="forestContent"></ng-container>
+            </div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-forest"><ng-container
+              *ngTemplateOutlet="forestContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 16. MIDNIGHT ════ -->
+      <ng-template #midnightContent>
+        <div class="mid-top-bar" [style.background]="accentColor"></div>
+        <div class="mid-header">
+          <div class="mid-header-left">
+            <div style="display:flex;align-items:center;gap:12px;"><img *ngIf="resume.basics.photo"
+                [src]="resume.basics.photo"
+                style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid currentColor;flex-shrink:0;"
+                [style.border-color]="accentColor" alt="photo">
+              <div>
+                <h1 class="mid-name">{{ resume.basics.name || 'Your Name' }}</h1>
+                <div class="mid-hl" [style.color]="accentColor">{{ resume.basics.headline }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="mid-header-right">
+            <div *ngIf="resume.basics.email" class="mid-ci"><span class="mid-ci-icon"
+                [style.background]="accentColor">&#64;</span>{{ resume.basics.email }}</div>
+            <div *ngIf="resume.basics.phone" class="mid-ci"><span class="mid-ci-icon"
+                [style.background]="accentColor">☎</span>{{ resume.basics.phone }}</div>
+            <div *ngIf="resume.basics.location" class="mid-ci"><span class="mid-ci-icon"
+                [style.background]="accentColor">⊙</span>{{ resume.basics.location }}</div>
+            <div class="mid-ci"> <span *ngIf="resume.basics.linkedin"><i class="fab fa-linkedin"
+                  style="color:#ffffff; margin-right:6px;"></i>{{resume.basics.linkedin }}</span></div>
+
+          </div>
+        </div>
+        <div class="mid-body">
+          <div class="mid-main">
+            <div *ngIf="resume.summary" class="mid-sec">
+              <div class="mid-sec-title" [style.color]="accentColor" [style.border-color]="accentColor">Profile</div>
+              <p class="mid-para">{{ resume.summary }}</p>
+            </div>
+            <div *ngIf="resume.experience.length > 0" class="mid-sec">
+              <div class="mid-sec-title" [style.color]="accentColor" [style.border-color]="accentColor">Experience</div>
+              <div *ngFor="let exp of resume.experience" class="mid-item">
+                <div class="mid-item-dot" [style.background]="accentColor"></div>
+                <div class="mid-item-body">
+                  <div class="mid-ih"><strong>{{ exp.position }}</strong><span class="mid-date"
+                      [style.background]="accentColor">{{ exp.startDate }} – {{ exp.current ? 'Present' : exp.endDate
+                      }}</span></div>
+                  <div class="mid-co">{{ exp.company }}</div>
+                  <p class="mid-para" [innerHTML]="safeDesc(exp.description)"></p>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="resume.education.length > 0" class="mid-sec">
+              <div class="mid-sec-title" [style.color]="accentColor" [style.border-color]="accentColor">Education</div>
+              <div *ngFor="let edu of resume.education" class="mid-item">
+                <div class="mid-item-dot" [style.background]="accentColor"></div>
+                <div class="mid-item-body">
+                  <div class="mid-ih"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span class="mid-date"
+                      [style.background]="accentColor">{{ edu.startDate }} – {{ edu.endDate }}</span></div>
+                  <div class="mid-co">{{ edu.institution }}</div>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="resume.certifications.length > 0" class="mid-sec">
+              <div class="mid-sec-title" [style.color]="accentColor" [style.border-color]="accentColor">Certifications
+              </div>
+              <ul class="mid-list">
+                <li *ngFor="let c of resume.certifications">{{ c }}</li>
+              </ul>
+            </div>
+          </div>
+          <div class="mid-side" [style.border-color]="accentColor + '44'">
+            <ng-container *ngIf="resume.skills.length > 0">
+              <div class="mid-side-title" [style.background]="accentColor">Skills</div>
+              <div class="mid-skill-list">
+                <div *ngFor="let s of resume.skills" class="mid-skill-item"><span class="mid-skill-dot"
+                    [style.background]="accentColor"></span>{{ s }}</div>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="resume.languages.length > 0">
+              <div class="mid-side-title" [style.background]="accentColor">Languages</div>
+              <div class="mid-skill-list">
+                <div *ngFor="let l of resume.languages" class="mid-skill-item"><span class="mid-skill-dot"
+                    [style.background]="accentColor"></span>{{ l }}</div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'midnight'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-midnight"><ng-container *ngTemplateOutlet="midnightContent"></ng-container>
+            </div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-midnight"><ng-container
+              *ngTemplateOutlet="midnightContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 17. AMBER ════ -->
+      <ng-template #amberContent>
+        <div class="amb-header">
+          <img *ngIf="resume.basics.photo" [src]="resume.basics.photo"
+            style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid currentColor;flex-shrink:0;"
+            [style.border-color]="accentColor" alt="photo">
+          <div *ngIf="!resume.basics.photo" class="amb-circle" [style.background]="accentColor">{{ (resume.basics.name
+            || 'A')[0].toUpperCase() }}</div>
+          <div class="amb-info">
+            <h1 class="amb-name">{{ resume.basics.name || 'Your Name' }}</h1>
+            <div class="amb-hl" [style.color]="accentColor">{{ resume.basics.headline }}</div>
+            <div class="amb-contact">
+              <span *ngIf="resume.basics.email">{{ resume.basics.email }}</span>
+              <span *ngIf="resume.basics.phone">{{ resume.basics.phone }}</span>
+              <span *ngIf="resume.basics.location">{{ resume.basics.location }}</span>
+              <span *ngIf="resume.basics.linkedin"><i class="fab fa-linkedin"
+                  style="color:#0A66C2; margin-right:6px;"></i>{{resume.basics.linkedin }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="amb-divider" [style.background]="accentColor"></div>
+        <div class="amb-body">
+          <div class="amb-main">
+            <div *ngIf="resume.summary" class="amb-sec">
+              <div class="amb-t" [style.color]="accentColor">Summary</div>
+              <p class="amb-para">{{ resume.summary }}</p>
+            </div>
+            <div *ngIf="resume.experience.length > 0" class="amb-sec">
+              <div class="amb-t" [style.color]="accentColor">Experience</div>
+              <div *ngFor="let exp of resume.experience" class="amb-item">
+                <div class="amb-ih"><strong>{{ exp.position }}</strong><span class="amb-date">{{ exp.startDate }} – {{
+                    exp.current ? 'Present' : exp.endDate }}</span></div>
+                <div class="amb-co">{{ exp.company }}</div>
+                <p class="amb-para" [innerHTML]="safeDesc(exp.description)"></p>
+              </div>
+            </div>
+            <div *ngIf="resume.education.length > 0" class="amb-sec">
+              <div class="amb-t" [style.color]="accentColor">Education</div>
+              <div *ngFor="let edu of resume.education" class="amb-item">
+                <div class="amb-ih"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span class="amb-date">{{
+                    edu.startDate }} – {{ edu.endDate }}</span></div>
+                <div class="amb-co">{{ edu.institution }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="amb-side">
+            <ng-container *ngIf="resume.skills.length > 0">
+              <div class="amb-side-t" [style.background]="accentColor">Skills</div>
+              <div class="amb-tags"><span *ngFor="let s of resume.skills" class="amb-tag" [style.color]="accentColor"
+                  [style.border-color]="accentColor">{{ s }}</span></div>
+            </ng-container>
+            <ng-container *ngIf="resume.languages.length > 0">
+              <div class="amb-side-t" [style.background]="accentColor">Languages</div>
+              <div *ngFor="let l of resume.languages" class="amb-lang">{{ l }}</div>
+            </ng-container>
+            <ng-container *ngIf="resume.certifications.length > 0">
+              <div class="amb-side-t" [style.background]="accentColor">Certifications</div>
+              <div *ngFor="let c of resume.certifications" class="amb-lang">{{ c }}</div>
+            </ng-container>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'amber'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-amber"><ng-container *ngTemplateOutlet="amberContent"></ng-container></div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-amber"><ng-container
+              *ngTemplateOutlet="amberContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 18. ARCTIC ════ -->
+      <ng-template #arcticContent>
+        <div class="arc-header" [style.background]="accentColor">
+          <div style="display:flex;align-items:center;gap:14px;"><img *ngIf="resume.basics.photo"
+              [src]="resume.basics.photo"
+              style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.4);flex-shrink:0;"
+              alt="photo">
+            <div>
+              <h1 class="arc-name">{{ resume.basics.name || 'Your Name' }}</h1>
+              <p class="arc-hl">{{ resume.basics.headline }}</p>
+            </div>
+          </div>
+          <div class="arc-contact">
+            <span *ngIf="resume.basics.email">{{ resume.basics.email }}</span>
+            <span *ngIf="resume.basics.phone">{{ resume.basics.phone }}</span>
+            <span *ngIf="resume.basics.location">{{ resume.basics.location }}</span>
+            <span *ngIf="resume.basics.linkedin"><i class="fab fa-linkedin"
+                style="color:#ffffff; margin-right:6px;"></i>{{resume.basics.linkedin }}</span>
+          </div>
+        </div>
+
+        <div class="arc-body">
+          <div *ngIf="resume.summary" class="arc-sec">
+            <div class="arc-t" [style.color]="accentColor">Summary</div>
+            <p class="arc-para">{{ resume.summary }}</p>
+          </div>
+          <div *ngIf="resume.experience.length > 0" class="arc-sec">
+            <div class="arc-t" [style.color]="accentColor">Experience</div>
+            <div *ngFor="let exp of resume.experience" class="arc-item">
+              <div class="arc-badge" [style.background]="accentColor">{{ exp.startDate.split(' ').length > 1 ?
+                exp.startDate.split(' ')[1] : exp.startDate }}</div>
+              <div class="arc-item-body">
+                <div class="arc-ih"><strong>{{ exp.position }}</strong><em class="arc-co">{{ exp.company }}</em></div>
+                <div class="arc-dates">{{ exp.startDate }} – {{ exp.current ? 'Present' : exp.endDate }}</div>
+                <p class="arc-para" [innerHTML]="safeDesc(exp.description)"></p>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="resume.education.length > 0" class="arc-sec">
+            <div class="arc-t" [style.color]="accentColor">Education</div>
+            <div *ngFor="let edu of resume.education" class="arc-item">
+              <div class="arc-badge" [style.background]="accentColor">{{ edu.startDate.split(' ').length > 1 ?
+                edu.startDate.split(' ')[1] : edu.startDate }}</div>
+              <div class="arc-item-body">
+                <div class="arc-ih"><strong>{{ edu.degree }} in {{ edu.field }}</strong></div><em class="arc-co">{{
+                  edu.institution }}</em>
+              </div>
+            </div>
+          </div>
+          <div class="arc-two">
+            <div *ngIf="resume.skills.length > 0">
+              <div class="arc-t" [style.color]="accentColor">Skills</div>
+              <div class="arc-tags"><span *ngFor="let s of resume.skills" class="arc-tag"
+                  [style.background]="accentColor">{{ s }}</span></div>
+            </div>
+            <div *ngIf="resume.languages.length > 0">
+              <div class="arc-t" [style.color]="accentColor">Languages</div>
+              <ul class="arc-list">
+                <li *ngFor="let l of resume.languages">{{ l }}</li>
+              </ul>
+            </div>
+          </div>
+          <div *ngIf="resume.certifications.length > 0" class="arc-sec">
+            <div class="arc-t" [style.color]="accentColor">Certifications</div>
+            <ul class="arc-list">
+              <li *ngFor="let c of resume.certifications">{{ c }}</li>
+            </ul>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'arctic'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-arctic"><ng-container *ngTemplateOutlet="arcticContent"></ng-container>
+            </div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-arctic"><ng-container
+              *ngTemplateOutlet="arcticContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 19. CRIMSON ════ -->
+      <ng-template #crimsonContent>
+        <div class="crm-top" [style.background]="accentColor">
+          <div class="crm-top-left"><img *ngIf="resume.basics.photo" [src]="resume.basics.photo"
+              style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.4);"
+              alt="photo">
+            <div *ngIf="!resume.basics.photo" class="crm-avatar">{{ (resume.basics.name || 'A')[0].toUpperCase() }}
+            </div>
+          </div>
+          <div class="crm-top-center">
+            <h1 class="crm-name">{{ resume.basics.name || 'Your Name' }}</h1>
+            <div class="crm-hl">{{ resume.basics.headline }}</div>
+          </div>
+          <div class="crm-top-right">
+            <div *ngIf="resume.basics.email" class="crm-ci">{{ resume.basics.email }}</div>
+            <div *ngIf="resume.basics.phone" class="crm-ci">{{ resume.basics.phone }}</div>
+            <div *ngIf="resume.basics.location" class="crm-ci">{{ resume.basics.location }}</div>
+            <div *ngIf="resume.basics.linkedin" class="crm-ci"><i class="fab fa-linkedin"
+                style="color:#ffffff; margin-right:6px;"></i>{{resume.basics.linkedin }}</div>
+          </div>
+        </div>
+        <div class="crm-body">
+          <div class="crm-side" [style.border-right-color]="accentColor + '33'">
+            <ng-container *ngIf="resume.skills.length > 0">
+              <div class="crm-side-t" [style.background]="accentColor">Skills</div>
+              <div *ngFor="let s of resume.skills" class="crm-skill"><span class="crm-bullet"
+                  [style.background]="accentColor"></span>{{ s }}</div>
+            </ng-container>
+            <ng-container *ngIf="resume.languages.length > 0">
+              <div class="crm-side-t" [style.background]="accentColor">Languages</div>
+              <div *ngFor="let l of resume.languages" class="crm-skill"><span class="crm-bullet"
+                  [style.background]="accentColor"></span>{{ l }}</div>
+            </ng-container>
+            <ng-container *ngIf="resume.certifications.length > 0">
+              <div class="crm-side-t" [style.background]="accentColor">Certifications</div>
+              <div *ngFor="let c of resume.certifications" class="crm-skill"><span class="crm-bullet"
+                  [style.background]="accentColor"></span>{{ c }}</div>
+            </ng-container>
+          </div>
+          <div class="crm-main">
+            <div *ngIf="resume.summary" class="crm-sec">
+              <div class="crm-sec-t" [style.color]="accentColor" [style.border-color]="accentColor">Executive Summary
+              </div>
+              <p class="crm-para">{{ resume.summary }}</p>
+            </div>
+            <div *ngIf="resume.experience.length > 0" class="crm-sec">
+              <div class="crm-sec-t" [style.color]="accentColor" [style.border-color]="accentColor">Professional
+                Experience</div>
+              <div *ngFor="let exp of resume.experience" class="crm-item">
+                <div class="crm-ih"><strong>{{ exp.position }}</strong><span class="crm-date"
+                    [style.background]="accentColor">{{ exp.startDate }} – {{ exp.current ? 'Present' : exp.endDate
+                    }}</span></div>
+                <div class="crm-co">{{ exp.company }}</div>
+                <p class="crm-para" [innerHTML]="safeDesc(exp.description)"></p>
+              </div>
+            </div>
+            <div *ngIf="resume.education.length > 0" class="crm-sec">
+              <div class="crm-sec-t" [style.color]="accentColor" [style.border-color]="accentColor">Education</div>
+              <div *ngFor="let edu of resume.education" class="crm-item">
+                <div class="crm-ih"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span class="crm-date"
+                    [style.background]="accentColor">{{ edu.startDate }} – {{ edu.endDate }}</span></div>
+                <div class="crm-co">{{ edu.institution }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'crimson'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-crimson"><ng-container *ngTemplateOutlet="crimsonContent"></ng-container>
+            </div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-crimson"><ng-container
+              *ngTemplateOutlet="crimsonContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 20. GRAPHITE ════ -->
+      <ng-template #graphiteContent>
+        <div class="gph-header" [style.background]="accentColor">
+          <div style="display:flex;align-items:center;gap:14px;flex:1;"><img *ngIf="resume.basics.photo"
+              [src]="resume.basics.photo"
+              style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.4);flex-shrink:0;"
+              alt="photo">
+            <div class="gph-left">
+              <h1 class="gph-name">{{ resume.basics.name || 'Your Name' }}</h1>
+              <p class="gph-hl">{{ resume.basics.headline }}</p>
+            </div>
+          </div>
+          <div class="gph-right">
+            <div *ngIf="resume.basics.email" class="gph-ci">{{ resume.basics.email }}</div>
+            <div *ngIf="resume.basics.phone" class="gph-ci">{{ resume.basics.phone }}</div>
+            <div *ngIf="resume.basics.location" class="gph-ci">{{ resume.basics.location }}</div>
+            <div *ngIf="resume.basics.linkedin" class="gph-ci"><i class="fab fa-linkedin"
+                style="color:#ffffff; margin-right:6px;"></i>{{resume.basics.linkedin }}</div>
+
+          </div>
+        </div>
+        <div class="gph-accent-line" [style.background]="accentColor + '55'"></div>
+        <div class="gph-body">
+          <div *ngIf="resume.summary" class="gph-sec">
+            <div class="gph-t" [style.color]="accentColor">PROFILE</div>
+            <p class="gph-para">{{ resume.summary }}</p>
+          </div>
+          <div *ngIf="resume.experience.length > 0" class="gph-sec">
+            <div class="gph-t" [style.color]="accentColor">EXPERIENCE</div>
+            <div *ngFor="let exp of resume.experience" class="gph-item">
+              <div class="gph-ih">
+                <div class="gph-marker" [style.background]="accentColor"></div><strong>{{ exp.position }}</strong><span
+                  class="gph-date">{{ exp.startDate }} – {{ exp.current ? 'Present' : exp.endDate }}</span>
+              </div>
+              <div class="gph-co">{{ exp.company }}</div>
+              <p class="gph-para" [innerHTML]="safeDesc(exp.description)"></p>
+            </div>
+          </div>
+          <div *ngIf="resume.education.length > 0" class="gph-sec">
+            <div class="gph-t" [style.color]="accentColor">EDUCATION</div>
+            <div *ngFor="let edu of resume.education" class="gph-item">
+              <div class="gph-ih">
+                <div class="gph-marker" [style.background]="accentColor"></div><strong>{{ edu.degree }} in {{ edu.field
+                  }}</strong><span class="gph-date">{{ edu.startDate }} – {{ edu.endDate }}</span>
+              </div>
+              <div class="gph-co">{{ edu.institution }}</div>
+            </div>
+          </div>
+          <div class="gph-two">
+            <div *ngIf="resume.skills.length > 0">
+              <div class="gph-t" [style.color]="accentColor">SKILLS</div>
+              <div class="gph-tags"><span *ngFor="let s of resume.skills" class="gph-tag"
+                  [style.border-color]="accentColor" [style.color]="accentColor">{{ s }}</span></div>
+            </div>
+            <div *ngIf="resume.languages.length > 0">
+              <div class="gph-t" [style.color]="accentColor">LANGUAGES</div>
+              <p class="gph-para">{{ resume.languages.join(' · ') }}</p>
+            </div>
+          </div>
+          <div *ngIf="resume.certifications.length > 0" class="gph-sec">
+            <div class="gph-t" [style.color]="accentColor">CERTIFICATIONS</div>
+            <ul class="gph-list">
+              <li *ngFor="let c of resume.certifications">{{ c }}</li>
+            </ul>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'graphite'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-graphite"><ng-container *ngTemplateOutlet="graphiteContent"></ng-container>
+            </div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-graphite"><ng-container
+              *ngTemplateOutlet="graphiteContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 21. SIMPLE ════ -->
+      <ng-template #simpleContent>
+        <div class="simp-header">
+          <img *ngIf="resume.basics.photo" [src]="resume.basics.photo" class="simp-photo" alt="photo">
+          <h1 class="simp-name">{{ resume.basics.name || 'Your Name' }}</h1>
+          <div class="simp-hl" [style.color]="accentColor">{{ resume.basics.headline }}</div>
+          <div class="simp-contact"><span *ngIf="resume.basics.email">{{ resume.basics.email }}</span><span
+              *ngIf="resume.basics.phone">{{ resume.basics.phone }}</span><span *ngIf="resume.basics.location">{{
+              resume.basics.location }}</span><span *ngIf="resume.basics.linkedin"><i class="fab fa-linkedin"
+                style="color:#0A66C2; margin-right:6px;"></i>{{resume.basics.linkedin }}</span></div>
+          <div class="simp-hr" [style.background]="accentColor"></div>
+        </div>
+        <div class="simp-body">
+          <div *ngIf="resume.summary" class="simp-sec">
+            <div class="simp-t" [style.color]="accentColor" [style.border-color]="accentColor">SUMMARY</div>
+            <p class="simp-para">{{ resume.summary }}</p>
+          </div>
+          <div *ngIf="resume.experience.length > 0" class="simp-sec">
+            <div class="simp-t" [style.color]="accentColor" [style.border-color]="accentColor">EXPERIENCE</div>
+            <div *ngFor="let exp of resume.experience" class="simp-item">
+              <div class="simp-row"><strong>{{ exp.position }}</strong><span class="simp-date">{{ exp.startDate }} – {{
+                  exp.current ? 'Present' : exp.endDate }}</span></div>
+              <div class="simp-sub" [style.color]="accentColor">{{ exp.company }}</div>
+              <p class="simp-para" [innerHTML]="safeDesc(exp.description)"></p>
+            </div>
+          </div>
+          <div *ngIf="resume.education.length > 0" class="simp-sec">
+            <div class="simp-t" [style.color]="accentColor" [style.border-color]="accentColor">EDUCATION</div>
+            <div *ngFor="let edu of resume.education" class="simp-item">
+              <div class="simp-row"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span class="simp-date">{{
+                  edu.startDate }} – {{ edu.endDate }}</span></div>
+              <div class="simp-sub" [style.color]="accentColor">{{ edu.institution }}</div>
+            </div>
+          </div>
+          <div class="simp-two">
+            <div *ngIf="resume.skills.length > 0" class="simp-col">
+              <div class="simp-t" [style.color]="accentColor" [style.border-color]="accentColor">SKILLS</div>
+              <div class="simp-tags"><span *ngFor="let s of resume.skills" class="simp-tag"
+                  [style.border-color]="accentColor" [style.color]="accentColor">{{ s }}</span></div>
+            </div>
+            <div *ngIf="(resume.strengths?.length ?? 0) > 0" class="simp-col">
+              <div class="simp-t" [style.color]="accentColor" [style.border-color]="accentColor">STRENGTHS</div>
+              <div *ngFor="let s of resume.strengths" class="simp-strength-row"><span>{{ s.name }}</span><span
+                  *ngFor="let star of starRange()" style="font-size:10px;"
+                  [style.color]="star <= s.level ? accentColor : '#d1d5db'">★</span></div>
+            </div>
+          </div>
+          <div class="simp-two">
+            <div *ngIf="resume.languages.length > 0" class="simp-col">
+              <div class="simp-t" [style.color]="accentColor" [style.border-color]="accentColor">LANGUAGES</div>
+              <p class="simp-para">{{ resume.languages.join(' · ') }}</p>
+            </div>
+            <div *ngIf="resume.certifications.length > 0" class="simp-col">
+              <div class="simp-t" [style.color]="accentColor" [style.border-color]="accentColor">CERTIFICATIONS</div>
+              <ul class="simp-list">
+                <li *ngFor="let c of resume.certifications">{{ c }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'simple'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-simple"><ng-container *ngTemplateOutlet="simpleContent"></ng-container>
+            </div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-simple"><ng-container
+              *ngTemplateOutlet="simpleContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 22. VIVID ════ -->
+      <ng-template #vividContent>
+        <div class="viv-header" [style.background]="accentColor">
+          <div class="viv-top">
+            <img *ngIf="resume.basics.photo" [src]="resume.basics.photo" class="viv-photo" alt="photo">
+            <div *ngIf="!resume.basics.photo" class="viv-avatar">{{ (resume.basics.name || 'A')[0].toUpperCase() }}
+            </div>
+            <div class="viv-title">
+              <h1 class="viv-name">{{ resume.basics.name || 'Your Name' }}</h1>
+              <div class="viv-hl">{{ resume.basics.headline }}</div>
+            </div>
+          </div>
+          <div class="viv-contact">
+            <div *ngIf="resume.basics.email" class="viv-ci"><span class="viv-ci-dot">✦</span>{{ resume.basics.email }}
+            </div>
+            <div *ngIf="resume.basics.phone" class="viv-ci"><span class="viv-ci-dot">✦</span>{{ resume.basics.phone }}
+            </div>
+            <div *ngIf="resume.basics.location" class="viv-ci"><span class="viv-ci-dot">✦</span>{{
+              resume.basics.location }}</div>
+
+            <div class="viv-ci"><span *ngIf="resume.basics.linkedin"><i class="fab fa-linkedin"
+                  style="color:#ffffff; margin-right:6px;"></i>{{resume.basics.linkedin }}</span></div>
+          </div>
+        </div>
+        <div class="viv-body">
+          <div *ngIf="resume.summary" class="viv-sec">
+            <div class="viv-sec-title"><span class="viv-icon" [style.background]="accentColor">✎</span><span
+                [style.color]="accentColor">Summary</span></div>
+            <p class="viv-para">{{ resume.summary }}</p>
+          </div>
+          <div *ngIf="resume.experience.length > 0" class="viv-sec">
+            <div class="viv-sec-title"><span class="viv-icon" [style.background]="accentColor">▶</span><span
+                [style.color]="accentColor">Experience</span></div>
+            <div *ngFor="let exp of resume.experience" class="viv-item">
+              <div class="viv-item-left" [style.border-color]="accentColor">
+                <div class="viv-dot" [style.background]="accentColor"></div>
+              </div>
+              <div class="viv-item-right">
+                <div class="viv-ih"><strong>{{ exp.position }}</strong><span class="viv-badge"
+                    [style.background]="accentColor + '22'" [style.color]="accentColor">{{ exp.startDate }} – {{
+                    exp.current ? 'Present' : exp.endDate }}</span></div>
+                <div class="viv-co">{{ exp.company }}</div>
+                <p class="viv-para" [innerHTML]="safeDesc(exp.description)"></p>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="resume.education.length > 0" class="viv-sec">
+            <div class="viv-sec-title"><span class="viv-icon" [style.background]="accentColor">♦</span><span
+                [style.color]="accentColor">Education</span></div>
+            <div *ngFor="let edu of resume.education" class="viv-item">
+              <div class="viv-item-left" [style.border-color]="accentColor">
+                <div class="viv-dot" [style.background]="accentColor"></div>
+              </div>
+              <div class="viv-item-right">
+                <div class="viv-ih"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span class="viv-date">{{
+                    edu.startDate }} – {{ edu.endDate }}</span></div>
+                <div class="viv-co">{{ edu.institution }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="viv-row-sections">
+            <div *ngIf="resume.skills.length > 0" class="viv-mini-sec">
+              <div class="viv-mini-title" [style.color]="accentColor">Skills</div>
+              <div class="viv-tags"><span *ngFor="let s of resume.skills" class="viv-tag"
+                  [style.background]="accentColor">{{ s }}</span></div>
+            </div>
+            <div *ngIf="resume.languages.length > 0" class="viv-mini-sec">
+              <div class="viv-mini-title" [style.color]="accentColor">Languages</div>
+              <div *ngFor="let l of resume.languages" style="font-size:9px;color:#374151;margin-bottom:2px;">{{ l }}
+              </div>
+            </div>
+            <div *ngIf="resume.certifications.length > 0" class="viv-mini-sec">
+              <div class="viv-mini-title" [style.color]="accentColor">Certifications</div>
+              <div *ngFor="let c of resume.certifications" style="font-size:9px;color:#374151;margin-bottom:2px;">• {{ c
+                }}</div>
+            </div>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'vivid'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-vivid"><ng-container *ngTemplateOutlet="vividContent"></ng-container></div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-vivid"><ng-container
+              *ngTemplateOutlet="vividContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 23. PILLAR ════ -->
+      <ng-template #pillarContent>
+        <div class="pil-header" [style.background]="accentColor">
+          <div style="display:flex;align-items:center;gap:16px;">
+            <img *ngIf="resume.basics.photo" [src]="resume.basics.photo" class="pil-photo" alt="photo">
+            <div *ngIf="!resume.basics.photo" class="pil-avatar">{{ (resume.basics.name || 'A')[0].toUpperCase() }}
+            </div>
+            <div class="pil-name-area">
+              <h1 class="pil-name">{{ resume.basics.name || 'Your Name' }}</h1>
+              <div class="pil-hl">{{ resume.basics.headline }}</div>
+              <div class="pil-contact"><span *ngIf="resume.basics.email">{{ resume.basics.email }}</span><span
+                  *ngIf="resume.basics.phone">{{ resume.basics.phone }}</span><span *ngIf="resume.basics.location">{{
+                  resume.basics.location }}</span>
+                <span *ngIf="resume.basics.linkedin"><i class="fab fa-linkedin"
+                    style="color:#ffffff; margin-right:6px;"></i>{{resume.basics.linkedin }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="pil-body">
+          <div class="pil-side">
+            <ng-container *ngIf="resume.skills.length > 0">
+              <div class="pil-side-t" [style.color]="accentColor">Skills</div>
+              <div *ngFor="let s of resume.skills" class="pil-side-item"><span class="pil-bullet"
+                  [style.background]="accentColor"></span>{{ s }}</div>
+            </ng-container>
+            <ng-container *ngIf="(resume.strengths?.length ?? 0) > 0">
+              <div class="pil-side-t" [style.color]="accentColor">Strengths</div>
+              <div *ngFor="let s of resume.strengths" class="pil-str"><span class="pil-str-name">{{ s.name }}</span>
+                <div class="pil-str-bar">
+                  <div class="pil-str-fill" [style.width]="(s.level/5*100) + '%'" [style.background]="accentColor">
+                  </div>
+                </div><span class="pil-str-lbl" [style.color]="accentColor">{{ strengthLevelLabel(s.level) }}</span>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="resume.languages.length > 0">
+              <div class="pil-side-t" [style.color]="accentColor">Languages</div>
+              <div *ngFor="let l of resume.languages" class="pil-side-item"><span class="pil-bullet"
+                  [style.background]="accentColor"></span>{{ l }}</div>
+            </ng-container>
+            <ng-container *ngIf="resume.certifications.length > 0">
+              <div class="pil-side-t" [style.color]="accentColor">Certifications</div>
+              <div *ngFor="let c of resume.certifications" class="pil-side-item" style="font-size:8.5px;"><span
+                  class="pil-bullet" [style.background]="accentColor"></span>{{ c }}</div>
+            </ng-container>
+          </div>
+          <div class="pil-main">
+            <div *ngIf="resume.summary" class="pil-sec">
+              <div class="pil-sec-title" [style.color]="accentColor" [style.border-bottom-color]="accentColor">Profile
+              </div>
+              <p class="pil-para">{{ resume.summary }}</p>
+            </div>
+            <div *ngIf="resume.experience.length > 0" class="pil-sec">
+              <div class="pil-sec-title" [style.color]="accentColor" [style.border-bottom-color]="accentColor">
+                Experience</div>
+              <div *ngFor="let exp of resume.experience" class="pil-item">
+                <div class="pil-ih"><strong>{{ exp.position }}</strong><span class="pil-date"
+                    [style.background]="accentColor">{{ exp.startDate }} – {{ exp.current ? 'Present' : exp.endDate
+                    }}</span></div>
+                <div class="pil-co">{{ exp.company }}</div>
+                <p class="pil-para" [innerHTML]="safeDesc(exp.description)"></p>
+              </div>
+            </div>
+            <div *ngIf="resume.education.length > 0" class="pil-sec">
+              <div class="pil-sec-title" [style.color]="accentColor" [style.border-bottom-color]="accentColor">Education
+              </div>
+              <div *ngFor="let edu of resume.education" class="pil-item">
+                <div class="pil-ih"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span class="pil-date"
+                    [style.background]="accentColor">{{ edu.startDate }} – {{ edu.endDate }}</span></div>
+                <div class="pil-co">{{ edu.institution }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'pillar'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-pillar"><ng-container *ngTemplateOutlet="pillarContent"></ng-container>
+            </div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-pillar"><ng-container
+              *ngTemplateOutlet="pillarContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 24. CARD ════ -->
+      <ng-template #cardContent>
+        <div class="crd-header">
+          <div class="crd-top-strip" [style.background]="accentColor"></div>
+          <div class="crd-intro">
+            <img *ngIf="resume.basics.photo" [src]="resume.basics.photo" class="crd-photo" alt="photo">
+            <div *ngIf="!resume.basics.photo" class="crd-avatar" [style.background]="accentColor">{{ (resume.basics.name
+              || 'A')[0].toUpperCase() }}</div>
+            <div>
+              <h1 class="crd-name">{{ resume.basics.name || 'Your Name' }}</h1>
+              <div class="crd-hl" [style.color]="accentColor">{{ resume.basics.headline }}</div>
+              <div class="crd-contact"><span *ngIf="resume.basics.email"><span class="crd-ci-dot"
+                    [style.color]="accentColor">●</span>{{ resume.basics.email }}</span><span
+                  *ngIf="resume.basics.phone"><span class="crd-ci-dot" [style.color]="accentColor">●</span>{{
+                  resume.basics.phone }}</span><span *ngIf="resume.basics.location"><span class="crd-ci-dot"
+                    [style.color]="accentColor">●</span>{{ resume.basics.location }}</span>
+                <span *ngIf="resume.basics.linkedin"><i class="fab fa-linkedin"
+                    style="color:#0A66C2; margin-right:6px;"></i>{{resume.basics.linkedin }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="crd-body">
+          <div *ngIf="resume.summary" class="crd-card">
+            <div class="crd-card-title" [style.color]="accentColor"><span class="crd-title-bar"
+                [style.background]="accentColor"></span>Summary</div>
+            <p class="crd-para">{{ resume.summary }}</p>
+          </div>
+          <div *ngIf="resume.experience.length > 0" class="crd-card">
+            <div class="crd-card-title" [style.color]="accentColor"><span class="crd-title-bar"
+                [style.background]="accentColor"></span>Experience</div>
+            <div *ngFor="let exp of resume.experience" class="crd-item">
+              <div class="crd-item-chip" [style.background]="accentColor + '15'"
+                [style.border-left-color]="accentColor">
+                <div class="crd-ih"><strong>{{ exp.position }}</strong><span class="crd-dt">{{ exp.startDate }} – {{
+                    exp.current ? 'Present' : exp.endDate }}</span></div>
+                <div class="crd-co" [style.color]="accentColor">{{ exp.company }}</div>
+                <p class="crd-para" [innerHTML]="safeDesc(exp.description)"></p>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="resume.education.length > 0" class="crd-card">
+            <div class="crd-card-title" [style.color]="accentColor"><span class="crd-title-bar"
+                [style.background]="accentColor"></span>Education</div>
+            <div *ngFor="let edu of resume.education" class="crd-item">
+              <div class="crd-item-chip" [style.background]="accentColor + '15'"
+                [style.border-left-color]="accentColor">
+                <div class="crd-ih"><strong>{{ edu.degree }} in {{ edu.field }}</strong><span class="crd-dt">{{
+                    edu.startDate }} – {{ edu.endDate }}</span></div>
+                <div class="crd-co" [style.color]="accentColor">{{ edu.institution }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="crd-row">
+            <div *ngIf="resume.skills.length > 0" class="crd-card crd-half">
+              <div class="crd-card-title" [style.color]="accentColor"><span class="crd-title-bar"
+                  [style.background]="accentColor"></span>Skills</div>
+              <div class="crd-skill-chips"><span *ngFor="let s of resume.skills" class="crd-chip"
+                  [style.background]="accentColor + '18'" [style.color]="accentColor">{{ s }}</span></div>
+            </div>
+            <div *ngIf="(resume.strengths?.length ?? 0) > 0" class="crd-card crd-half">
+              <div class="crd-card-title" [style.color]="accentColor"><span class="crd-title-bar"
+                  [style.background]="accentColor"></span>Strengths</div>
+              <div *ngFor="let s of resume.strengths" class="crd-str-bar-row"><span class="crd-str-name">{{ s.name
+                  }}</span>
+                <div class="crd-str-track">
+                  <div class="crd-str-fill" [style.width]="(s.level/5*100) + '%'" [style.background]="accentColor">
+                  </div>
+                </div><span class="crd-str-pct" [style.color]="accentColor">{{ s.level * 20 }}%</span>
+              </div>
+            </div>
+          </div>
+          <div class="crd-row" *ngIf="resume.languages.length > 0 || resume.certifications.length > 0">
+            <div *ngIf="resume.languages.length > 0" class="crd-card crd-half">
+              <div class="crd-card-title" [style.color]="accentColor"><span class="crd-title-bar"
+                  [style.background]="accentColor"></span>Languages</div>
+              <div class="crd-skill-chips"><span *ngFor="let l of resume.languages" class="crd-chip"
+                  [style.background]="accentColor + '18'" [style.color]="accentColor">{{ l }}</span></div>
+            </div>
+            <div *ngIf="resume.certifications.length > 0" class="crd-card crd-half">
+              <div class="crd-card-title" [style.color]="accentColor"><span class="crd-title-bar"
+                  [style.background]="accentColor"></span>Certifications</div>
+              <ul class="crd-list">
+                <li *ngFor="let c of resume.certifications">{{ c }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'card'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-card"><ng-container *ngTemplateOutlet="cardContent"></ng-container></div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-card"><ng-container
+              *ngTemplateOutlet="cardContent"></ng-container></div>
+        </div>
+      </div>
+
+      <!-- ════ 25. ACADEMIC ════ -->
+      <ng-template #academicContent>
+        <div class="acad-header">
+          <div class="acad-name-area">
+            <img *ngIf="resume.basics.photo" [src]="resume.basics.photo" class="acad-photo" alt="photo">
+            <div>
+              <h1 class="acad-name">{{ resume.basics.name || 'Your Name' }}</h1>
+              <div class="acad-hl" [style.color]="accentColor">{{ resume.basics.headline }}</div>
+            </div>
+          </div>
+          <div class="acad-rule" [style.border-color]="accentColor"></div>
+          <div class="acad-contact"><span *ngIf="resume.basics.email">{{ resume.basics.email }}</span><span
+              *ngIf="resume.basics.phone">{{ resume.basics.phone }}</span><span *ngIf="resume.basics.location">{{
+              resume.basics.location }}</span><span *ngIf="resume.basics.linkedin"><i class="fab fa-linkedin"
+                style="color:#0A66C2; margin-right:6px;"></i>{{resume.basics.linkedin }}</span></div>
+          <div class="acad-rule-thin" [style.border-color]="accentColor"></div>
+        </div>
+        <div class="acad-body">
+          <div *ngIf="resume.summary" class="acad-sec">
+            <div class="acad-sec-title" [style.color]="accentColor">Abstract / Summary</div>
+            <p class="acad-para acad-italic">{{ resume.summary }}</p>
+          </div>
+          <div *ngIf="resume.experience.length > 0" class="acad-sec">
+            <div class="acad-sec-title" [style.color]="accentColor">Professional Experience</div>
+            <div *ngFor="let exp of resume.experience" class="acad-item">
+              <table class="acad-table" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td class="acad-td-main"><strong>{{ exp.position }}</strong><span class="acad-em"> — {{ exp.company
+                      }}</span></td>
+                  <td class="acad-td-date">{{ exp.startDate }} – {{ exp.current ? 'Present' : exp.endDate }}</td>
+                </tr>
+              </table>
+              <p class="acad-para" style="padding-left:14px;" [innerHTML]="safeDesc(exp.description)"></p>
+            </div>
+          </div>
+          <div *ngIf="resume.education.length > 0" class="acad-sec">
+            <div class="acad-sec-title" [style.color]="accentColor">Education</div>
+            <div *ngFor="let edu of resume.education" class="acad-item">
+              <table class="acad-table" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td class="acad-td-main"><strong>{{ edu.degree }}</strong><span class="acad-em"> in {{ edu.field
+                      }}</span></td>
+                  <td class="acad-td-date">{{ edu.startDate }} – {{ edu.endDate }}</td>
+                </tr>
+              </table>
+              <div class="acad-inst">{{ edu.institution }}<span *ngIf="edu.gpa"> · GPA: {{ edu.gpa }}</span></div>
+            </div>
+          </div>
+          <div class="acad-cols">
+            <div *ngIf="resume.skills.length > 0" class="acad-col">
+              <div class="acad-sec-title" [style.color]="accentColor">Keywords / Skills</div>
+              <p class="acad-para">{{ resume.skills.join(', ') }}</p>
+            </div>
+            <div *ngIf="(resume.strengths?.length ?? 0) > 0" class="acad-col">
+              <div class="acad-sec-title" [style.color]="accentColor">Core Strengths</div>
+              <div *ngFor="let s of resume.strengths" class="acad-str"><span class="acad-str-name">{{ s.name
+                  }}</span><span *ngFor="let star of starRange()" style="font-size:9px;"
+                  [style.color]="star <= s.level ? accentColor : '#d1d5db'">★</span></div>
+            </div>
+          </div>
+          <div class="acad-cols" *ngIf="resume.languages.length > 0 || resume.certifications.length > 0">
+            <div *ngIf="resume.languages.length > 0" class="acad-col">
+              <div class="acad-sec-title" [style.color]="accentColor">Languages</div>
+              <p class="acad-para">{{ resume.languages.join(', ') }}</p>
+            </div>
+            <div *ngIf="resume.certifications.length > 0" class="acad-col">
+              <div class="acad-sec-title" [style.color]="accentColor">Certifications</div>
+              <ul class="acad-list">
+                <li *ngFor="let c of resume.certifications">{{ c }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <ng-container *ngTemplateOutlet="commonExtras"></ng-container>
+      </ng-template>
+      <div class="rb-sheet-wrapper" *ngIf="selectedTemplate === 'academic'">
+        <div *ngFor="let page of pageViewArray; let i = index" class="rb-page-view"
+          [class.rb-page-continuation]="i > 0">
+          <div class="rb-page-view-inner" [style.top.px]="getPageTopOffset(i)">
+            <div class="resume-sheet resume-academic"><ng-container *ngTemplateOutlet="academicContent"></ng-container>
+            </div>
+          </div>
+          <div class="rb-page-num-badge">PAGE {{ i + 1 }} / {{ previewPageCount }}</div>
+        </div>
+        <div class="rb-pdf-source">
+          <div id="resumePreview" class="resume-sheet resume-academic"><ng-container
+              *ngTemplateOutlet="academicContent"></ng-container></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

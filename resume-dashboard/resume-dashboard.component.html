@@ -1,0 +1,112 @@
+<div class="rd-root">
+
+  <div class="rd-header">
+    <div>
+      <span class="rd-label">RESUME BUILDER</span>
+    </div>
+    <button class="rd-btn-new" (click)="onAction('create')">
+      <mat-icon>add</mat-icon> New Resume
+    </button>
+  </div>
+
+  <div class="rd-actions">
+    <div class="rd-action-card" *ngFor="let a of quickActions" [class]="'rd-ac-' + a.id" [style.--ac]="a.color"
+      (click)="onAction(a.id)">
+      <div class="rd-ac-icon"><mat-icon>{{ a.icon }}</mat-icon></div>
+      <div class="rd-ac-text">
+        <div class="rd-ac-title">{{ a.title }}</div>
+        <div class="rd-ac-sub">{{ a.subtitle }}</div>
+      </div>
+      <mat-icon class="rd-ac-arrow">arrow_forward</mat-icon>
+    </div>
+  </div>
+
+  <div class="rd-sec-header">
+    <h2 class="rd-sec-title">Recent Resumes</h2>
+    <span class="rd-count" *ngIf="!isLoading">{{ myResumes.length }} resumes</span>
+  </div>
+
+  <div class="rd-loading" *ngIf="isLoading">
+    <div class="rd-spinner"></div>
+    <p>Loading resumes...</p>
+  </div>
+
+  <div class="rd-empty" *ngIf="!isLoading && myResumes.length === 0">
+    <mat-icon>description</mat-icon>
+    <h3>No resumes yet</h3>
+    <p>Create your first resume to get started</p>
+    <button class="rd-btn-new" (click)="onAction('create')">Create Resume</button>
+  </div>
+
+  <div class="rd-grid" *ngIf="!isLoading && myResumes.length > 0">
+    <div class="rd-card" *ngFor="let r of myResumes" [style.--tc]="r.templateColor">
+
+      <div class="rd-card-preview" [style.background]="r.templateColor" (click)="editResume(r)">
+        <div class="rd-mini">
+          <div class="rd-mini-name">{{ r.resume_data?.basics?.name || 'Untitled' }}</div>
+          <div class="rd-mini-role">{{ r.resume_data?.basics?.headline || '' }}</div>
+          <div class="rd-mini-lines">
+            <div class="rd-mini-line w80"></div>
+            <div class="rd-mini-line w60"></div>
+            <div class="rd-mini-line w90"></div>
+            <div class="rd-mini-line w50"></div>
+          </div>
+        </div>
+        <div class="rd-preview-overlay">
+          <mat-icon>edit_note</mat-icon>
+          <span>Edit Resume</span>
+        </div>
+        <div class="rd-template-badge">{{ capitalize(r.template) }}</div>
+      </div>
+
+      <div class="rd-card-info">
+        <div class="rd-card-main">
+          <div class="rd-resume-name">{{ r.resume_data?.basics?.name || 'Untitled Resume' }}</div>
+          <div class="rd-resume-role">{{ r.resume_data?.basics?.headline || 'No title added' }}</div>
+          <div class="rd-resume-meta">
+            <span><mat-icon>calendar_today</mat-icon>{{ formatDate(r.created_at) }}</span>
+            <span *ngIf="r.resume_data?.skills?.length"><mat-icon>sell</mat-icon>{{ r.resume_data.skills.length }}
+              skills</span>
+          </div>
+        </div>
+        <button class="rd-delete-btn" (click)="openDeleteModal(r)" matTooltip="Delete">
+          <mat-icon>delete_outline</mat-icon>
+        </button>
+      </div>
+
+      <div class="rd-card-footer">
+        <span class="rd-dl-label">Download</span>
+        <div class="rd-dl-btns">
+          <button class="rd-dl pdf" (click)="downloadPDF(r)" [disabled]="downloadingId === r.id">
+            <mat-icon>picture_as_pdf</mat-icon>PDF
+          </button>
+          <button class="rd-dl png" (click)="downloadPNG(r)" [disabled]="downloadingId === r.id">
+            <mat-icon>image</mat-icon>PNG
+          </button>
+        </div>
+        <div class="rd-loading-inline" *ngIf="downloadingId === r.id">
+          <div class="rd-spinner-sm"></div> Generating...
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+
+<ng-template #deleteDialog>
+  <h2 mat-dialog-title>Confirm Delete</h2>
+
+  <div mat-dialog-content>
+    <p>
+      Are you sure you want to delete this resume
+      <b>{{ selectedResume?.resume_data?.basics?.name }}</b>?
+    </p>
+  </div>
+
+  <div mat-dialog-actions align="end">
+    <button mat-button (click)="closeDialog()">Cancel</button>
+    <button mat-flat-button color="warn" (click)="confirmDelete()">Delete</button>
+  </div>
+</ng-template>

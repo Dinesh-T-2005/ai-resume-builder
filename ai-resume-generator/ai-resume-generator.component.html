@@ -1,0 +1,394 @@
+<div class="arc-root">
+
+  <div class="arc-topbar" *ngIf="stage === 'upload'">
+    <div class="arc-topbar-left">
+      <mat-icon class="arc-logo-icon">auto_awesome</mat-icon>
+      <div>
+        <div class="arc-topbar-title">AI Resume Builder</div>
+        <div class="arc-topbar-sub">Upload → Score → Generate → Download</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arc-header" *ngIf="currentStep > 0">
+    <button class="arc-back-btn" (click)="goBack()">
+      <mat-icon>arrow_back_ios</mat-icon>
+    </button>
+    <div class="arc-header-center">
+      <div class="arc-candidate-chip" *ngIf="parsedName">
+        <mat-icon>person</mat-icon> {{ parsedName }}
+      </div>
+      <div class="arc-step-dots">
+        <div class="arc-dot" *ngFor="let s of steps" [class.active]="s.num === currentStep"
+          [class.done]="s.num < currentStep">
+          <mat-icon *ngIf="s.num < currentStep">check</mat-icon>
+          <span *ngIf="s.num >= currentStep">{{ s.num }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="arc-step-label">Step {{ currentStep }} of 3</div>
+  </div>
+
+
+  <div class="arc-content" *ngIf="stage === 'upload'">
+    <div class="arc-upload-zone" [class.dragover]="dragOver" (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)" (drop)="onDrop($event)" (click)="fileInput.click()">
+      <input #fileInput type="file" [accept]="ACCEPTED" style="display:none" (change)="onFileSelect($event)">
+      <div class="arc-upload-icon"><mat-icon>cloud_upload</mat-icon></div>
+      <h2 class="arc-upload-title">Drop your resume here</h2>
+      <p class="arc-upload-sub">or click to browse · PDF, DOCX, Image</p>
+      <div class="arc-file-badges">
+        <div class="arc-badge" *ngFor="let ft of fileTypes" [style.--fc]="ft.color">
+          <mat-icon>{{ ft.icon }}</mat-icon>{{ ft.ext }}
+        </div>
+      </div>
+      <p class="arc-upload-limit">Max 10 MB</p>
+    </div>
+
+    <div class="arc-how">
+      <div class="arc-how-title">How it works</div>
+      <div class="arc-how-steps">
+        <div class="arc-how-step">
+          <div class="arc-how-num">1</div>
+          <mat-icon class="arc-how-icon">upload_file</mat-icon>
+          <span>Upload Resume</span>
+        </div>
+        <div class="arc-how-arrow"><mat-icon>east</mat-icon></div>
+        <div class="arc-how-step">
+          <div class="arc-how-num">2</div>
+          <mat-icon class="arc-how-icon">analytics</mat-icon>
+          <span>Get Match Score</span>
+        </div>
+        <div class="arc-how-arrow"><mat-icon>east</mat-icon></div>
+        <div class="arc-how-step">
+          <div class="arc-how-num">3</div>
+          <mat-icon class="arc-how-icon">auto_awesome</mat-icon>
+          <span>AI Improves Resume</span>
+        </div>
+        <div class="arc-how-arrow"><mat-icon>east</mat-icon></div>
+        <div class="arc-how-step">
+          <div class="arc-how-num">4</div>
+          <mat-icon class="arc-how-icon">download</mat-icon>
+          <span>Download PDF/DOCX</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="arc-status-wrap" *ngIf="stage === 'uploading'">
+    <div class="arc-status-card">
+      <div class="arc-status-icon blue"><mat-icon>upload</mat-icon></div>
+      <h2>Uploading your resume...</h2>
+      <div class="arc-progress-track">
+        <div class="arc-progress-fill" [style.width.%]="uploadProgress"></div>
+      </div>
+      <div class="arc-progress-pct">{{ uploadProgress }}%</div>
+    </div>
+  </div>
+
+
+  <div class="arc-status-wrap" *ngIf="stage === 'parsing'">
+    <div class="arc-status-card">
+      <div class="arc-status-icon purple">
+        <mat-icon class="arc-spin">auto_awesome</mat-icon>
+      </div>
+      <h2>AI is reading your resume...</h2>
+      <p>Extracting name, experience, skills &amp; more</p>
+      <div class="arc-dots"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+
+
+  <div class="arc-step-wrap" *ngIf="stage === 'step1'">
+    <div class="arc-step-card">
+      <div class="arc-step-icon" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)">
+        <mat-icon>work_outline</mat-icon>
+      </div>
+      <h2 class="arc-step-heading">What job are you applying for?</h2>
+      <p class="arc-step-hint">Enter the exact job title — AI will match your resume to this role</p>
+
+      <div class="arc-input-wrap">
+        <label class="arc-label">Job Title <span class="arc-required">*</span></label>
+        <div class="arc-input-box" [class.focused]="jobTitleFocused">
+          <mat-icon class="arc-input-icon">work</mat-icon>
+          <input class="arc-input" type="text" [(ngModel)]="jobTitle" placeholder="e.g. Senior React Developer"
+            maxlength="100" (focus)="jobTitleFocused = true" (blur)="jobTitleFocused = false"
+            (keydown.enter)="goStep2()">
+        </div>
+        <div class="arc-suggestions">
+          <span class="arc-sug-label">Quick pick:</span>
+          <button class="arc-sug-chip" *ngFor="let jt of jobSuggestions" (click)="jobTitle = jt">{{ jt }}</button>
+        </div>
+      </div>
+
+      <div class="arc-step-actions">
+        <button class="arc-primary-btn" (click)="goStep2()" [disabled]="!jobTitle.trim()">
+          Next <mat-icon>arrow_forward</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="arc-step-wrap" *ngIf="stage === 'step2'">
+    <div class="arc-step-card">
+      <div class="arc-step-icon" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)">
+        <mat-icon>description</mat-icon>
+      </div>
+      <h2 class="arc-step-heading">Paste the Job Description</h2>
+      <p class="arc-step-hint">AI will analyse your resume against this JD and calculate your match score</p>
+
+      <div class="arc-input-wrap">
+        <label class="arc-label">
+          Job Description <span class="arc-required">*</span>
+          <span class="arc-char-count">{{ jdLength }} chars</span>
+        </label>
+        <div class="arc-textarea-box" [class.focused]="jdFocused">
+          <textarea class="arc-textarea" [(ngModel)]="jobDescription" placeholder="Paste the full job description here...
+
+Example:
+We are looking for a Senior React Developer with 3+ years of experience...
+Required skills: React, TypeScript, Node.js...
+Responsibilities: Build scalable UI components..." rows="8" maxlength="3000" (focus)="jdFocused = true"
+            (blur)="jdFocused = false">
+          </textarea>
+        </div>
+        <div class="arc-jd-tip">
+          <mat-icon>lightbulb</mat-icon>
+          Tip: More detail = better AI matching. Paste requirements, skills, responsibilities.
+        </div>
+      </div>
+
+      <div class="arc-step-actions">
+        <button class="arc-secondary-btn" (click)="goBack()">
+          <mat-icon>arrow_back</mat-icon> Back
+        </button>
+        <button class="arc-primary-btn" (click)="analyzeScore()" [disabled]="!jobDescription.trim()">
+          <mat-icon>analytics</mat-icon> Analyse Score
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="arc-status-wrap" *ngIf="stage === 'scoring'">
+    <div class="arc-status-card arc-scoring-card">
+
+      <div class="arc-scoring-anim">
+        <svg viewBox="0 0 128 128" class="arc-score-ring-anim">
+          <circle cx="64" cy="64" r="54" fill="none" stroke="#e2e8f0" stroke-width="10" />
+          <circle cx="64" cy="64" r="54" fill="none" stroke="#6366f1" stroke-width="10" stroke-dasharray="339.3"
+            stroke-dashoffset="339.3" class="arc-ring-fill" stroke-linecap="round" transform="rotate(-90 64 64)" />
+        </svg>
+        <mat-icon class="arc-scoring-center-icon arc-spin">analytics</mat-icon>
+      </div>
+
+      <h2>Analysing your resume...</h2>
+      <p class="arc-scoring-sub">Comparing against <strong>{{ jobTitle }}</strong></p>
+
+      <div class="arc-scoring-steps">
+        <div class="arc-scoring-step" *ngFor="let s of scoringSteps" [class.done]="s.done" [class.active]="s.active">
+          <mat-icon *ngIf="s.done">check_circle</mat-icon>
+          <mat-icon *ngIf="s.active" class="arc-spin">radio_button_checked</mat-icon>
+          <mat-icon *ngIf="!s.done && !s.active">radio_button_unchecked</mat-icon>
+          <span>{{ s.label }}</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <div class="arc-score-page" *ngIf="stage === 'score' && scoreData">
+
+    <div class="arc-score-hero">
+
+      <div class="arc-score-gauge-wrap">
+        <svg viewBox="0 0 128 128" class="arc-score-gauge">
+          <circle cx="64" cy="64" r="54" fill="none" stroke="#e2e8f0" stroke-width="10" />
+          <path [attr.d]="scoreArcPath(scoreData.overall)" fill="none" [attr.stroke]="scoreColor(scoreData.overall)"
+            stroke-width="10" stroke-linecap="round" />
+        </svg>
+        <div class="arc-score-center">
+          <div class="arc-score-number" [style.color]="scoreColor(scoreData.overall)">
+            {{ scoreData.overall }}
+          </div>
+          <div class="arc-score-pct">/ 100</div>
+        </div>
+      </div>
+
+      <div class="arc-score-meta">
+        <div class="arc-score-badge" [style.background]="scoreColor(scoreData.overall) + '22'"
+          [style.color]="scoreColor(scoreData.overall)">
+          {{ scoreLabel(scoreData.overall) }}
+        </div>
+        <div class="arc-score-job">for <strong>{{ jobTitle }}</strong></div>
+
+        <div class="arc-score-predicted">
+          <mat-icon>auto_awesome</mat-icon>
+          After AI improvement:&nbsp;
+          <span class="arc-predicted-val" style="color:#10b981">
+            {{ scoreData.predictedScore }}/100
+          </span>
+          <span class="arc-predicted-gain">
+            (+{{ scoreData.predictedScore - scoreData.overall }})
+          </span>
+        </div>
+      </div>
+
+    </div>
+
+
+    <div class="arc-score-section">
+      <div class="arc-score-section-title">Score Breakdown</div>
+      <div class="arc-breakdown-grid">
+
+        <div class="arc-breakdown-item" *ngFor="let cat of breakdownCategories">
+          <div class="arc-bd-header">
+            <div class="arc-bd-label">
+              <mat-icon>{{ cat.icon }}</mat-icon>
+              <span>{{ cat.label }}</span>
+            </div>
+            <div class="arc-bd-score" [style.color]="scoreColor(getBreakdown(cat.key).score)">
+              {{ getBreakdown(cat.key).score }}%
+            </div>
+          </div>
+          <div class="arc-bd-track">
+            <div class="arc-bd-fill" [style.width.%]="getBreakdown(cat.key).score"
+              [style.background]="scoreColor(getBreakdown(cat.key).score)">
+            </div>
+          </div>
+          <div class="arc-bd-note" *ngIf="getBreakdown(cat.key).note">
+            {{ getBreakdown(cat.key).note }}
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <div class="arc-score-section"
+      *ngIf="(scoreData.breakdown.skills.matched?.length || 0) + (scoreData.breakdown.keywords.matched?.length || 0) > 0">
+      <div class="arc-score-section-title arc-title-green">
+        <mat-icon>check_circle</mat-icon> Matched Keywords
+      </div>
+      <div class="arc-kw-chips">
+        <span class="arc-kw-chip arc-kw-matched"
+          *ngFor="let kw of (scoreData.breakdown.skills.matched || []).concat(scoreData.breakdown.keywords.matched || [])">
+          {{ kw }}
+        </span>
+      </div>
+    </div>
+
+
+    <div class="arc-score-section"
+      *ngIf="(scoreData.breakdown.skills.missing?.length || 0) + (scoreData.breakdown.keywords.missing?.length || 0) > 0">
+      <div class="arc-score-section-title arc-title-red">
+        <mat-icon>cancel</mat-icon> Missing Keywords
+        <span class="arc-kw-sub">(AI will add these)</span>
+      </div>
+      <div class="arc-kw-chips">
+        <span class="arc-kw-chip arc-kw-missing"
+          *ngFor="let kw of (scoreData.breakdown.skills.missing || []).concat(scoreData.breakdown.keywords.missing || [])">
+          {{ kw }}
+        </span>
+      </div>
+    </div>
+
+
+    <div class="arc-score-section" *ngIf="scoreData.topSuggestions?.length">
+      <div class="arc-score-section-title arc-title-indigo">
+        <mat-icon>tips_and_updates</mat-icon> AI Suggestions
+      </div>
+      <div class="arc-suggestions-list">
+        <div class="arc-sug-item" *ngFor="let tip of scoreData.topSuggestions; let i = index">
+          <span class="arc-sug-num">{{ i + 1 }}</span>
+          <span>{{ tip }}</span>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="arc-score-section arc-note-section">
+      <button class="arc-note-toggle" type="button" (click)="showNoteInput = !showNoteInput">
+        <mat-icon>{{ showNoteInput ? 'expand_less' : 'add_circle_outline' }}</mat-icon>
+        <span>Add custom instructions for AI</span>
+        <span class="arc-optional-badge">optional</span>
+      </button>
+
+      <div *ngIf="showNoteInput" class="arc-note-body">
+        <div class="arc-textarea-box" [class.focused]="noteFocused">
+          <textarea class="arc-textarea arc-textarea-sm" [(ngModel)]="customNote" [placeholder]="noteHint" rows="3"
+            maxlength="500" (focus)="noteFocused = true" (blur)="noteFocused = false">
+          </textarea>
+        </div>
+        <div class="arc-note-examples">
+          <span class="arc-sug-label">Examples:</span>
+          <button class="arc-sug-chip" *ngFor="let ex of noteExamples" type="button" (click)="customNote = ex">{{ ex
+            }}</button>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="arc-score-cta">
+      <button class="arc-secondary-btn" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon> Back
+      </button>
+      <button class="arc-skip-btn" (click)="skipTailoring()">
+        Use Resume As-Is
+      </button>
+      <button class="arc-generate-btn" (click)="generateImprovedResume()">
+        <mat-icon>auto_awesome</mat-icon>
+        Generate Improved Resume
+        <span class="arc-gen-score-badge">→ {{ scoreData.predictedScore }}/100</span>
+      </button>
+    </div>
+
+  </div>
+
+
+  <div class="arc-status-wrap" *ngIf="stage === 'tailoring'">
+    <div class="arc-status-card">
+      <div class="arc-status-icon gold">
+        <mat-icon class="arc-spin">psychology</mat-icon>
+      </div>
+      <h2>AI is generating your resume...</h2>
+      <p>Optimizing for <strong>{{ jobTitle }}</strong>
+        <ng-container *ngIf="scoreData"> · Target: {{ scoreData.predictedScore }}/100</ng-container>
+      </p>
+      <div class="arc-tailor-steps">
+        <div class="arc-tailor-step"><mat-icon>check_circle</mat-icon> Resume analysed</div>
+        <div class="arc-tailor-step active">
+          <mat-icon class="arc-spin">radio_button_unchecked</mat-icon> Improving content
+        </div>
+        <div class="arc-tailor-step pending">
+          <mat-icon>radio_button_unchecked</mat-icon> Adding missing keywords
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="arc-status-wrap" *ngIf="stage === 'success'">
+    <div class="arc-status-card success">
+      <div class="arc-status-icon green"><mat-icon>check_circle</mat-icon></div>
+      <h2>Resume ready!</h2>
+      <p>Opening editor for <strong>{{ parsedName }}</strong>...</p>
+    </div>
+  </div>
+
+
+  <div class="arc-status-wrap" *ngIf="stage === 'error'">
+    <div class="arc-status-card error">
+      <div class="arc-status-icon red"><mat-icon>error_outline</mat-icon></div>
+      <h2>Something went wrong</h2>
+      <p class="arc-error-msg">{{ errorMsg }}</p>
+      <button class="arc-retry-btn" (click)="retry()">
+        <mat-icon>refresh</mat-icon> Try Again
+      </button>
+    </div>
+  </div>
+
+</div>
